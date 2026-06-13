@@ -79,7 +79,7 @@ class AppTheme {
           fontSize: 14,
         ),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: AppColors.surface,
         elevation: 4,
         shadowColor: AppColors.cardShadow,
@@ -116,7 +116,7 @@ class AppTheme {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-      tabBarTheme: const TabBarThemeData(
+      tabBarTheme: const TabBarTheme(
         labelColor: AppColors.secondary,
         unselectedLabelColor: AppColors.textSecondary,
         indicatorColor: AppColors.secondary,

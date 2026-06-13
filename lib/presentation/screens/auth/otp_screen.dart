@@ -186,10 +186,10 @@ class _OtpBox extends StatelessWidget {
     return SizedBox(
       width: 46,
       height: 56,
-      child: RawKeyboardListener(
+      child: KeyboardListener(
         focusNode: FocusNode(),
-        onKey: (event) {
-          if (event is RawKeyDownEvent &&
+        onKeyEvent: (event) {
+          if (event is KeyDownEvent &&
               event.logicalKey == LogicalKeyboardKey.backspace &&
               controller.text.isEmpty) {
             onBackspace();

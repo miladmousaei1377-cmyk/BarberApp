@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_theme.dart';
-import '../../core/utils/persian_utils.dart';
 import '../../data/models/salon_model.dart';
 import 'star_rating.dart';
 

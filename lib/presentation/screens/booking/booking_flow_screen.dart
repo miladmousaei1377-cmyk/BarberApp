@@ -12,7 +12,6 @@ import '../../../data/models/stylist_model.dart';
 import '../../widgets/service_tile.dart';
 import '../../widgets/time_slot_chip.dart';
 import '../../widgets/persian_calendar_picker.dart';
-import '../../widgets/star_rating.dart';
 
 class BookingFlowScreen extends StatefulWidget {
   const BookingFlowScreen({super.key});

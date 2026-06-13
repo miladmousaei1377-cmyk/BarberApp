@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../core/utils/persian_utils.dart';
 import '../../../data/mock/mock_data.dart';
 import '../../../data/models/salon_model.dart';
 import '../../widgets/star_rating.dart';

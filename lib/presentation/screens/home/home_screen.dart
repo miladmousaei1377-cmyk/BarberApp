@@ -44,8 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<SalonModel> get _nearbySalons => MockData.salons.take(3).toList();
-  List<SalonModel> get _topSalons =>
-      [...MockData.salons]..sort((a, b) => b.rating.compareTo(a.rating));
 
   @override
   void dispose() {
