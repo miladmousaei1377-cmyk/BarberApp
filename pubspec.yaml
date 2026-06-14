@@ -30,6 +30,11 @@ dependencies:
   # Icons
   cupertino_icons: ^1.0.6
 
+dependency_overrides:
+  # geolocator_android 4.6.x uses flutter.compileSdkVersion which is not
+  # available to library sub-projects; pin to 4.5.x which uses a hardcoded value.
+  geolocator_android: '>=4.5.0 <4.6.0'
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
