@@ -31,11 +31,27 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     await Future.delayed(const Duration(milliseconds: 800));
 
-    final phone = Get.arguments as String? ?? '09000000000';
+    // Arguments can be a Map with phone and role, or just a phone String
+    final args = Get.arguments;
+    String phone = '09000000000';
+    UserRole role = UserRole.customer;
+
+    if (args is Map) {
+      phone = (args['phone'] as String?) ?? '09000000000';
+      final roleStr = (args['role'] as String?) ?? 'customer';
+      role = UserRole.values.firstWhere(
+        (r) => r.name == roleStr,
+        orElse: () => UserRole.customer,
+      );
+    } else if (args is String) {
+      phone = args;
+    }
+
     final user = UserModel(
       id: 'u_${DateTime.now().millisecondsSinceEpoch}',
       phone: phone,
       fullName: name,
+      role: role,
       createdAt: DateTime.now(),
     );
 

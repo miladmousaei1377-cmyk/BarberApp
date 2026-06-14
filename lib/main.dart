@@ -30,7 +30,7 @@ class BarberBookApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'آراپوینت',
+      title: 'آرایش پلاس',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       locale: const Locale('fa', 'IR'),

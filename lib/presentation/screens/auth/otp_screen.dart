@@ -63,7 +63,7 @@ class _OtpScreenState extends State<OtpScreen> {
     await Future.delayed(const Duration(seconds: 1));
     setState(() => _isLoading = false);
     // In mock mode, any 6-digit code works
-    Get.toNamed(Routes.profileSetup, arguments: _phone);
+    Get.toNamed(Routes.roleSelection, arguments: _phone);
   }
 
   @override

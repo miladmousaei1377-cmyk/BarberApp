@@ -93,15 +93,6 @@ class ServiceTile extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              PersianUtils.formatPrice(service.price),
-              style: TextStyle(
-                fontFamily: 'Vazirmatn',
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: isSelected ? AppColors.secondary : AppColors.primary,
-              ),
-            ),
           ],
         ),
       ),

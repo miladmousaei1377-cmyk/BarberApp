@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ('all', 'همه'),
     ('male', 'مردانه'),
     ('female', 'زنانه'),
-    ('unisex', 'یونیسکس'),
   ];
 
   List<SalonModel> get _filteredSalons {

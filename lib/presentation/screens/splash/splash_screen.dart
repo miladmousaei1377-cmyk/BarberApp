@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               delay: const Duration(milliseconds: 400),
               duration: const Duration(milliseconds: 800),
               child: const Text(
-                'آراپوینت',
+                'آرایش پلاس',
                 style: TextStyle(
                   fontFamily: 'Vazirmatn',
                   fontSize: 36,

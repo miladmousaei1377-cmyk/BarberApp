@@ -14,4 +14,6 @@ abstract class Routes {
   static const map = '/map';
   static const profile = '/profile';
   static const ownerPanel = '/owner/panel';
+  static const roleSelection = '/auth/role-selection';
+  static const barberRegister = '/owner/register';
 }

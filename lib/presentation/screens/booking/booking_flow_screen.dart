@@ -493,35 +493,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                     ..._selectedServices.map((s) => _SummaryRow(
                           Icons.cut_outlined,
                           s.name,
-                          PersianUtils.formatPrice(s.price),
-                          isPrice: true,
+                          '${PersianUtils.toPersianDigits(s.durationMinutes.toString())} دقیقه',
                         )),
-                    const Divider(color: AppColors.divider),
-                    Row(
-                      children: [
-                        const Icon(Icons.payments_outlined, color: AppColors.secondary, size: 20),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'مجموع',
-                          style: TextStyle(
-                            fontFamily: 'Vazirmatn',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          PersianUtils.formatPrice(_totalPrice),
-                          style: const TextStyle(
-                            fontFamily: 'Vazirmatn',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.secondary,
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -569,7 +542,7 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'مجموع: ${PersianUtils.formatPrice(_totalPrice)}',
+                    '${PersianUtils.toPersianDigits(_selectedServiceIds.length.toString())} خدمت انتخاب شده',
                     style: const TextStyle(
                       fontFamily: 'Vazirmatn',
                       fontSize: 14,
