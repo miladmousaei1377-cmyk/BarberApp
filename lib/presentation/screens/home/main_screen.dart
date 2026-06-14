@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../core/storage/storage_service.dart';
+import '../../../data/models/user_model.dart';
 import '../../widgets/custom_bottom_nav.dart';
 import '../home/home_screen.dart';
 import '../appointments/appointments_screen.dart';
 import '../map/map_screen.dart';
 import '../profile/profile_screen.dart';
+import '../owner/barber_panel_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -25,6 +28,13 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = StorageService.getUser();
+    final isBarber = user?.role == UserRole.barber;
+
+    if (isBarber) {
+      return const BarberPanelScreen();
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: IndexedStack(

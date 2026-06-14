@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
@@ -16,12 +17,63 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   SalonModel? _selectedSalon;
+  Position? _userPosition;
+
+  // Iran center
+  static const double _iranCenterLat = 32.4279;
+  static const double _iranCenterLng = 53.6880;
 
   void _launchMaps(SalonModel salon) async {
-    final url = Uri.parse(
-        'https://maps.google.com/?q=${salon.lat},${salon.lng}');
+    final url = Uri.parse('https://maps.google.com/?q=${salon.lat},${salon.lng}');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _requestLocationAndShow() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever ||
+        permission == LocationPermission.denied) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'برای نمایش موقعیت شما، دسترسی به مکان لازم است',
+              style: TextStyle(fontFamily: 'Vazirmatn'),
+              textDirection: TextDirection.rtl,
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      if (mounted) {
+        setState(() => _userPosition = position);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'دریافت موقعیت مکانی ناموفق بود',
+              style: TextStyle(fontFamily: 'Vazirmatn'),
+              textDirection: TextDirection.rtl,
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -34,11 +86,11 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Stack(
         children: [
-          // Map placeholder (flutter_map would be here with real OpenStreetMap)
+          // Map
           Container(
-            color: const Color(0xFFE8F4EA),
+            color: const Color(0xFFD4E6C3),
             child: CustomPaint(
-              painter: _MockMapPainter(
+              painter: _IranMapPainter(
                 salons: MockData.salons,
                 selected: _selectedSalon,
               ),
@@ -55,8 +107,22 @@ class _MapScreenState extends State<MapScreen> {
                 },
                 child: Stack(
                   children: [
-                    // Grid lines to simulate map
+                    // Grid lines
                     ..._buildMapGrid(context),
+                    // Iran label
+                    Positioned(
+                      top: MediaQuery.of(context).size.height * 0.38,
+                      left: MediaQuery.of(context).size.width * 0.35,
+                      child: const Text(
+                        'ایران',
+                        style: TextStyle(
+                          fontFamily: 'Vazirmatn',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w300,
+                          color: Color(0xFF7A9E6B),
+                        ),
+                      ),
+                    ),
                     // Salon markers
                     ...MockData.salons.map((salon) {
                       final pos = _latLngToOffset(salon.lat, salon.lng,
@@ -119,7 +185,36 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       );
                     }),
-                    // Map attribution
+                    // User location marker
+                    if (_userPosition != null)
+                      Builder(builder: (ctx) {
+                        final pos = _latLngToOffset(
+                          _userPosition!.latitude,
+                          _userPosition!.longitude,
+                          MediaQuery.of(ctx).size,
+                        );
+                        return Positioned(
+                          left: pos.dx - 12,
+                          top: pos.dy - 12,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withOpacity(0.4),
+                                  blurRadius: 10,
+                                  spreadRadius: 3,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    // Attribution
                     Positioned(
                       bottom: 16,
                       right: 16,
@@ -135,21 +230,45 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                     ),
-                    // Tehran label
-                    Positioned(
-                      top: MediaQuery.of(context).size.height * 0.35,
-                      left: MediaQuery.of(context).size.width * 0.3,
-                      child: const Text(
-                        'تهران',
-                        style: TextStyle(
-                          fontFamily: 'Vazirmatn',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
                   ],
+                ),
+              ),
+            ),
+          ),
+          // My location button
+          Positioned(
+            top: 16,
+            left: 16,
+            child: FloatingActionButton.small(
+              heroTag: 'my_location',
+              backgroundColor: Colors.white,
+              onPressed: _requestLocationAndShow,
+              child: const Icon(Icons.my_location, color: AppColors.primary),
+            ),
+          ),
+          // My location label
+          Positioned(
+            top: 16,
+            left: 60,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: const Text(
+                'مکان من',
+                style: TextStyle(
+                  fontFamily: 'Vazirmatn',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),
@@ -194,15 +313,15 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Offset _latLngToOffset(double lat, double lng, Size size) {
-    const minLat = 35.65, maxLat = 35.85;
-    const minLng = 51.30, maxLng = 51.50;
+    // Map bounds for Iran
+    const minLat = 25.0, maxLat = 40.0;
+    const minLng = 44.0, maxLng = 64.0;
     final x = (lng - minLng) / (maxLng - minLng) * size.width;
     final y = (1 - (lat - minLat) / (maxLat - minLat)) * (size.height - 200);
     return Offset(x, y);
   }
 
-  SalonModel? _findTappedSalon(
-      Offset tap, Size size, List<SalonModel> salons) {
+  SalonModel? _findTappedSalon(Offset tap, Size size, List<SalonModel> salons) {
     for (final salon in salons) {
       final pos = _latLngToOffset(salon.lat, salon.lng, size);
       if ((tap - pos).distance < 30) return salon;
@@ -211,40 +330,89 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
-class _MockMapPainter extends CustomPainter {
+class _IranMapPainter extends CustomPainter {
   final List<SalonModel> salons;
   final SalonModel? selected;
 
-  _MockMapPainter({required this.salons, this.selected});
+  _IranMapPainter({required this.salons, this.selected});
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw road-like lines for Tehran
-    final roadPaint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
-      ..strokeWidth = 4
+    // Draw stylized Iran shape using bezier paths
+    final landPaint = Paint()
+      ..color = const Color(0xFFC8DEB8)
+      ..style = PaintingStyle.fill;
+
+    final borderPaint = Paint()
+      ..color = const Color(0xFF8EAF7E)
+      ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
-    // Simulate major roads
+    final roadPaint = Paint()
+      ..color = Colors.white.withOpacity(0.7)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    final minorRoadPaint = Paint()
+      ..color = Colors.white.withOpacity(0.4)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    // Approximate Iran outline as a polygon (simplified)
+    final iranPath = Path();
+    // Normalized coordinates for Iran shape (approximate)
+    final points = [
+      Offset(size.width * 0.12, size.height * 0.18), // NW corner
+      Offset(size.width * 0.28, size.height * 0.08), // North
+      Offset(size.width * 0.45, size.height * 0.05), // North-center
+      Offset(size.width * 0.60, size.height * 0.10), // NE area
+      Offset(size.width * 0.72, size.height * 0.20), // East
+      Offset(size.width * 0.85, size.height * 0.25), // SE-East
+      Offset(size.width * 0.88, size.height * 0.45), // SE
+      Offset(size.width * 0.82, size.height * 0.62), // South-East
+      Offset(size.width * 0.70, size.height * 0.72), // South
+      Offset(size.width * 0.55, size.height * 0.78), // South-center
+      Offset(size.width * 0.40, size.height * 0.80), // South-SW
+      Offset(size.width * 0.25, size.height * 0.72), // SW
+      Offset(size.width * 0.15, size.height * 0.55), // West
+      Offset(size.width * 0.08, size.height * 0.38), // NW-W
+      Offset(size.width * 0.12, size.height * 0.18), // back to start
+    ];
+
+    iranPath.moveTo(points[0].dx, points[0].dy);
+    for (int i = 1; i < points.length; i++) {
+      iranPath.lineTo(points[i].dx, points[i].dy);
+    }
+    iranPath.close();
+
+    canvas.drawPath(iranPath, landPaint);
+    canvas.drawPath(iranPath, borderPaint);
+
+    // Major roads
     canvas.drawLine(
-      Offset(0, size.height * 0.45),
-      Offset(size.width, size.height * 0.45),
+      Offset(size.width * 0.25, size.height * 0.35),
+      Offset(size.width * 0.70, size.height * 0.40),
       roadPaint,
     );
     canvas.drawLine(
-      Offset(size.width * 0.5, 0),
-      Offset(size.width * 0.5, size.height),
+      Offset(size.width * 0.45, size.height * 0.15),
+      Offset(size.width * 0.48, size.height * 0.72),
       roadPaint,
     );
     canvas.drawLine(
-      Offset(size.width * 0.3, size.height * 0.2),
-      Offset(size.width * 0.7, size.height * 0.7),
-      roadPaint..strokeWidth = 2,
+      Offset(size.width * 0.20, size.height * 0.55),
+      Offset(size.width * 0.75, size.height * 0.62),
+      minorRoadPaint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.30, size.height * 0.22),
+      Offset(size.width * 0.55, size.height * 0.58),
+      minorRoadPaint,
     );
   }
 
   @override
-  bool shouldRepaint(_MockMapPainter old) => old.selected?.id != selected?.id;
+  bool shouldRepaint(_IranMapPainter old) => old.selected?.id != selected?.id;
 }
 
 class _SalonPreviewSheet extends StatelessWidget {
