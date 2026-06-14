@@ -587,9 +587,8 @@ class _SummaryRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final bool isPrice;
 
-  const _SummaryRow(this.icon, this.label, this.value, {this.isPrice = false});
+  const _SummaryRow(this.icon, this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
@@ -606,10 +605,10 @@ class _SummaryRow extends StatelessWidget {
           const Spacer(),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: 'Vazirmatn',
               fontSize: 13,
-              fontWeight: isPrice ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: FontWeight.w500,
               color: AppColors.textPrimary,
             ),
           ),

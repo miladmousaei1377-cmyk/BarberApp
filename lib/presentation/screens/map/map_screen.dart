@@ -19,10 +19,6 @@ class _MapScreenState extends State<MapScreen> {
   SalonModel? _selectedSalon;
   Position? _userPosition;
 
-  // Iran center
-  static const double _iranCenterLat = 32.4279;
-  static const double _iranCenterLng = 53.6880;
-
   void _launchMaps(SalonModel salon) async {
     final url = Uri.parse('https://maps.google.com/?q=${salon.lat},${salon.lng}');
     if (await canLaunchUrl(url)) {

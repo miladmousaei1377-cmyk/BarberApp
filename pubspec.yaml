@@ -25,7 +25,7 @@ dependencies:
 
   # Utilities
   url_launcher: ^6.2.4
-  geolocator: ^11.0.0
+  geolocator: ^10.1.0
 
   # Icons
   cupertino_icons: ^1.0.6
