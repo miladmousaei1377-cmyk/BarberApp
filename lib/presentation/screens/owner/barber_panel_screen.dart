@@ -1,66 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/routes/app_pages.dart';
-import '../../../app/theme/app_theme.dart';
+import '../../../controllers/owner_controller.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/utils/persian_utils.dart';
-import '../../../data/mock/mock_data.dart';
 import '../../../data/models/appointment_model.dart';
+import '../../../data/models/service_model.dart';
 import '../../../data/models/salon_model.dart';
+
+// ── Panel colours ───────────────────────────────────────────────────────────
+const _kPrimary = Color(0xFF0F3460);
+const _kAccent  = Color(0xFF533483);
+const _kSuccess = Color(0xFF28A745);
+const _kWarning = Color(0xFFFFC107);
+const _kDanger  = Color(0xFFDC3545);
+const _kBg      = Color(0xFFF4F6FA);
+const _kSurface = Colors.white;
+
+// ── Day names ────────────────────────────────────────────────────────────────
+const _dayNames = ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'];
+
+// ════════════════════════════════════════════════════════════════════════════
+// Main screen
+// ════════════════════════════════════════════════════════════════════════════
 
 class BarberPanelScreen extends StatefulWidget {
   const BarberPanelScreen({super.key});
-
   @override
   State<BarberPanelScreen> createState() => _BarberPanelScreenState();
 }
 
 class _BarberPanelScreenState extends State<BarberPanelScreen> {
-  int _currentIndex = 0;
+  int _tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    Get.put(OwnerController());
+  }
+
+  @override
+  void dispose() {
+    Get.delete<OwnerController>(force: true);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final user = StorageService.getUser();
-    final barberName = user?.fullName ?? 'آرایشگر';
-
-    final tabs = [
-      _DashboardTab(barberName: barberName),
-      const _AppointmentsTab(),
-      const _SalonTab(),
-      _ProfileTab(barberName: barberName),
-    ];
-
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: _kBg,
       body: IndexedStack(
-        index: _currentIndex,
-        children: tabs,
+        index: _tab,
+        children: const [
+          _DashboardTab(),
+          _AppointmentsTab(),
+          _ServicesTab(),
+          _StatsTab(),
+          _ProfileTab(),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.secondary.withOpacity(0.15),
+        selectedIndex: _tab,
+        onDestinationSelected: (i) => setState(() => _tab = i),
+        backgroundColor: _kSurface,
+        indicatorColor: _kPrimary.withOpacity(0.12),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: AppColors.secondary),
-            label: 'خانه',
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard, color: _kPrimary),
+            label: 'داشبورد',
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month, color: AppColors.secondary),
+            selectedIcon: Icon(Icons.calendar_month, color: _kPrimary),
             label: 'نوبت‌ها',
           ),
           NavigationDestination(
-            icon: Icon(Icons.store_outlined),
-            selectedIcon: Icon(Icons.store, color: AppColors.secondary),
-            label: 'سالن',
+            icon: Icon(Icons.design_services_outlined),
+            selectedIcon: Icon(Icons.design_services, color: _kPrimary),
+            label: 'خدمات',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outlined),
-            selectedIcon: Icon(Icons.person, color: AppColors.secondary),
-            label: 'پروفایل',
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart, color: _kPrimary),
+            label: 'آمار',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.store_outlined),
+            selectedIcon: Icon(Icons.store, color: _kPrimary),
+            label: 'سالن',
           ),
         ],
       ),
@@ -68,118 +96,123 @@ class _BarberPanelScreenState extends State<BarberPanelScreen> {
   }
 }
 
-// ─── Dashboard Tab ──────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+// TAB 1 — Dashboard
+// ════════════════════════════════════════════════════════════════════════════
 
 class _DashboardTab extends StatelessWidget {
-  final String barberName;
-
-  const _DashboardTab({required this.barberName});
-
-  List<AppointmentModel> get _todayAppointments {
-    final today = DateTime.now();
-    return MockData.appointments
-        .where((a) =>
-            a.date.year == today.year &&
-            a.date.month == today.month &&
-            a.date.day == today.day &&
-            a.status != AppointmentStatus.cancelled)
-        .toList()
-      ..sort((a, b) => a.startTime.compareTo(b.startTime));
-  }
-
-  int get _todayRevenue =>
-      _todayAppointments.fold(0, (sum, a) => sum + a.totalPrice);
-
-  bool get _hasSalon => MockData.salons.any((s) => s.ownerId == StorageService.getUser()?.id);
+  const _DashboardTab();
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
-    final todayApts = _todayAppointments;
+    final ctrl = OwnerController.to;
+    final user = StorageService.getUser();
+    final name = user?.fullName ?? 'آرایشگر';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 140,
-            pinned: true,
-            automaticallyImplyLeading: false,
-            backgroundColor: AppColors.primary,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.accent],
+      backgroundColor: _kBg,
+      body: Obx(() {
+        final hasSalon = ctrl.salon.value != null;
+        final todayApts = ctrl.todayAppointments;
+
+        return CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 150,
+              pinned: true,
+              automaticallyImplyLeading: false,
+              backgroundColor: _kPrimary,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [_kPrimary, _kAccent],
+                    ),
                   ),
-                ),
-                padding: const EdgeInsets.fromLTRB(24, 52, 24, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      'سلام، $barberName 👋',
-                      style: const TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'سلام، $name 👋',
+                        style: const TextStyle(
+                          fontFamily: 'Vazirmatn',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      PersianUtils.gregorianToJalali(today),
-                      style: const TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 13,
-                        color: Colors.white60,
+                      const SizedBox(height: 4),
+                      Text(
+                        PersianUtils.gregorianToJalali(DateTime.now()),
+                        style: const TextStyle(
+                          fontFamily: 'Vazirmatn',
+                          fontSize: 13,
+                          color: Colors.white60,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
+            SliverPadding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Quick stats
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Stats row
                   Row(
                     children: [
-                      _StatCard(
+                      _MiniStat(
                         label: 'نوبت‌های امروز',
                         value: PersianUtils.toPersianDigits(todayApts.length.toString()),
                         icon: Icons.calendar_today,
-                        color: AppColors.secondary,
+                        color: _kAccent,
                       ),
                       const SizedBox(width: 12),
-                      _StatCard(
+                      _MiniStat(
                         label: 'درآمد امروز',
-                        value: PersianUtils.formatPriceShort(_todayRevenue),
+                        value: PersianUtils.formatPriceShort(ctrl.todayRevenue),
                         icon: Icons.payments_outlined,
-                        color: AppColors.success,
+                        color: _kSuccess,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _MiniStat(
+                        label: 'درآمد ماه',
+                        value: PersianUtils.formatPriceShort(ctrl.monthRevenue),
+                        icon: Icons.trending_up,
+                        color: _kPrimary,
+                      ),
+                      const SizedBox(width: 12),
+                      _MiniStat(
+                        label: 'نوبت‌های ماه',
+                        value: PersianUtils.toPersianDigits(ctrl.monthAppointmentCount.toString()),
+                        icon: Icons.people_outline,
+                        color: _kWarning,
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  // Salon registration prompt if no salon
-                  if (!_hasSalon) ...[
+                  // No-salon prompt
+                  if (!hasSalon) ...[
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: AppColors.secondary.withOpacity(0.08),
+                        color: _kPrimary.withOpacity(0.06),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+                        border: Border.all(color: _kPrimary.withOpacity(0.2)),
                       ),
                       child: Column(
                         children: [
-                          const Icon(Icons.store_outlined, size: 48, color: AppColors.secondary),
+                          const Icon(Icons.store_outlined, size: 52, color: _kPrimary),
                           const SizedBox(height: 12),
                           const Text(
                             'هنوز سالنی ثبت نکرده‌اید',
@@ -187,27 +220,25 @@ class _DashboardTab extends StatelessWidget {
                               fontFamily: 'Vazirmatn',
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: _kPrimary,
                             ),
                           ),
                           const SizedBox(height: 6),
                           const Text(
                             'برای دریافت نوبت، ابتدا سالن خود را ثبت کنید',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Vazirmatn',
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
+                            style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.grey),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
                             onPressed: () => Get.toNamed(Routes.barberRegister),
-                            icon: const Icon(Icons.add_business),
-                            label: const Text(
-                              'ثبت سالن',
-                              style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _kPrimary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
+                            icon: const Icon(Icons.add_business),
+                            label: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
@@ -215,51 +246,449 @@ class _DashboardTab extends StatelessWidget {
                     const SizedBox(height: 20),
                   ],
                   // Today's appointments
-                  Row(
-                    children: [
-                      const Icon(Icons.schedule, color: AppColors.secondary, size: 20),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'نوبت‌های امروز',
-                        style: TextStyle(
-                          fontFamily: 'Vazirmatn',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                  _SectionHeader(title: 'نوبت‌های امروز', icon: Icons.schedule),
+                  const SizedBox(height: 8),
+                  if (todayApts.isEmpty)
+                    const _EmptyState(message: 'امروز نوبتی ندارید', icon: Icons.calendar_today_outlined)
+                  else
+                    ...todayApts.map((a) => _AptCard(apt: a, showActions: true)),
+                  const SizedBox(height: 24),
+                ]),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB 2 — Appointments
+// ════════════════════════════════════════════════════════════════════════════
+
+class _AppointmentsTab extends StatefulWidget {
+  const _AppointmentsTab();
+  @override
+  State<_AppointmentsTab> createState() => _AppointmentsTabState();
+}
+
+class _AppointmentsTabState extends State<_AppointmentsTab> with SingleTickerProviderStateMixin {
+  late final TabController _tabCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('نوبت‌ها', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+        bottom: TabBar(
+          controller: _tabCtrl,
+          indicatorColor: Colors.white,
+          labelStyle: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          tabs: const [Tab(text: 'امروز'), Tab(text: 'هفتگی'), Tab(text: 'همه')],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabCtrl,
+        children: const [
+          _TodayApts(),
+          _WeeklyApts(),
+          _AllApts(),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodayApts extends StatelessWidget {
+  const _TodayApts();
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final apts = OwnerController.to.todayAppointments;
+      if (apts.isEmpty) return const _EmptyState(message: 'امروز نوبتی ندارید', icon: Icons.calendar_today_outlined);
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: apts.length,
+        itemBuilder: (_, i) => _AptCard(apt: apts[i], showActions: true),
+      );
+    });
+  }
+}
+
+class _WeeklyApts extends StatefulWidget {
+  const _WeeklyApts();
+  @override
+  State<_WeeklyApts> createState() => _WeeklyAptsState();
+}
+
+class _WeeklyAptsState extends State<_WeeklyApts> {
+  DateTime _selected = DateTime.now();
+
+  @override
+  Widget build(BuildContext context) {
+    final week = List.generate(7, (i) => DateTime.now().subtract(Duration(days: 3 - i)));
+    return Obx(() {
+      final ctrl = OwnerController.to;
+      final dayApts = ctrl.appointmentsForDate(_selected);
+      return Column(
+        children: [
+          // Week bar
+          Container(
+            color: _kSurface,
+            height: 80,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              itemCount: week.length,
+              itemBuilder: (_, i) {
+                final day = week[i];
+                final count = ctrl.appointmentsForDate(day).length;
+                final isSelected = _selected.year == day.year && _selected.month == day.month && _selected.day == day.day;
+                return GestureDetector(
+                  onTap: () => setState(() => _selected = day),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 56,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: isSelected ? _kPrimary : _kBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          PersianUtils.weekDayName(day).substring(0, 2),
+                          style: TextStyle(
+                            fontFamily: 'Vazirmatn',
+                            fontSize: 11,
+                            color: isSelected ? Colors.white70 : Colors.grey,
+                          ),
                         ),
+                        const SizedBox(height: 2),
+                        Text(
+                          PersianUtils.toPersianDigits(day.day.toString()),
+                          style: TextStyle(
+                            fontFamily: 'Vazirmatn',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? Colors.white : _kPrimary,
+                          ),
+                        ),
+                        if (count > 0)
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white.withOpacity(0.3) : _kAccent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              PersianUtils.toPersianDigits(count.toString()),
+                              style: const TextStyle(
+                                fontFamily: 'Vazirmatn',
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Expanded(
+            child: dayApts.isEmpty
+                ? const _EmptyState(message: 'این روز نوبتی ندارید', icon: Icons.event_available_outlined)
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: dayApts.length,
+                    itemBuilder: (_, i) => _AptCard(apt: dayApts[i], showActions: true),
+                  ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+class _AllApts extends StatefulWidget {
+  const _AllApts();
+  @override
+  State<_AllApts> createState() => _AllAptsState();
+}
+
+class _AllAptsState extends State<_AllApts> {
+  AppointmentStatus? _filter;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      var apts = OwnerController.to.appointments.toList();
+      if (_filter != null) apts = apts.where((a) => a.status == _filter).toList();
+      apts.sort((a, b) {
+        final d = b.date.compareTo(a.date);
+        return d != 0 ? d : b.startTime.compareTo(a.startTime);
+      });
+      return Column(
+        children: [
+          // Filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                _FilterChip(label: 'همه', isSelected: _filter == null, onTap: () => setState(() => _filter = null)),
+                const SizedBox(width: 8),
+                _FilterChip(label: 'در انتظار', isSelected: _filter == AppointmentStatus.pending, color: _kWarning, onTap: () => setState(() => _filter = AppointmentStatus.pending)),
+                const SizedBox(width: 8),
+                _FilterChip(label: 'تأیید شده', isSelected: _filter == AppointmentStatus.confirmed, color: _kSuccess, onTap: () => setState(() => _filter = AppointmentStatus.confirmed)),
+                const SizedBox(width: 8),
+                _FilterChip(label: 'انجام شده', isSelected: _filter == AppointmentStatus.done, color: _kPrimary, onTap: () => setState(() => _filter = AppointmentStatus.done)),
+                const SizedBox(width: 8),
+                _FilterChip(label: 'لغو شده', isSelected: _filter == AppointmentStatus.cancelled, color: _kDanger, onTap: () => setState(() => _filter = AppointmentStatus.cancelled)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: apts.isEmpty
+                ? const _EmptyState(message: 'نوبتی یافت نشد', icon: Icons.search_off_outlined)
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    itemCount: apts.length,
+                    itemBuilder: (_, i) => _AptCard(apt: apts[i], showActions: true),
+                  ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB 3 — Services
+// ════════════════════════════════════════════════════════════════════════════
+
+class _ServicesTab extends StatelessWidget {
+  const _ServicesTab();
+
+  void _showServiceSheet(BuildContext context, {ServiceModel? editing}) {
+    final ctrl = OwnerController.to;
+    final salon = ctrl.salon.value;
+    if (salon == null) {
+      Get.snackbar('توجه', 'ابتدا سالن خود را ثبت کنید', backgroundColor: _kWarning, colorText: Colors.black);
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ServiceSheet(editing: editing, salonId: salon.id),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('خدمات', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () => _showServiceSheet(context),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showServiceSheet(context),
+        backgroundColor: _kPrimary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('خدمت جدید', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.white, fontWeight: FontWeight.w600)),
+      ),
+      body: Obx(() {
+        final ctrl = OwnerController.to;
+        if (ctrl.salon.value == null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.design_services_outlined, size: 64, color: Colors.grey),
+                const SizedBox(height: 12),
+                const Text('ابتدا سالن خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Get.toNamed(Routes.barberRegister),
+                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
+                  child: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn')),
+                ),
+              ],
+            ),
+          );
+        }
+        final svcs = ctrl.services;
+        if (svcs.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.design_services_outlined, size: 64, color: Colors.grey),
+                const SizedBox(height: 12),
+                const Text('خدماتی اضافه نکرده‌اید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => _showServiceSheet(context),
+                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
+                  icon: const Icon(Icons.add),
+                  label: const Text('افزودن خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          itemCount: svcs.length,
+          itemBuilder: (_, i) {
+            final svc = svcs[i];
+            return Dismissible(
+              key: Key(svc.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: _kDanger,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+              ),
+              confirmDismiss: (_) async {
+                return await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('حذف خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
+                    content: Text('آیا خدمت "${svc.name}" حذف شود؟', style: const TextStyle(fontFamily: 'Vazirmatn')),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('خیر', style: TextStyle(fontFamily: 'Vazirmatn'))),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('بله، حذف شود', style: TextStyle(fontFamily: 'Vazirmatn', color: _kDanger)),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  if (todayApts.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.divider),
-                      ),
-                      child: const Column(
-                        children: [
-                          Icon(Icons.calendar_today_outlined, size: 40, color: AppColors.textSecondary),
-                          SizedBox(height: 8),
-                          Text(
-                            'امروز نوبتی ندارید',
-                            style: TextStyle(
-                              fontFamily: 'Vazirmatn',
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    ...todayApts.map((a) => _AppointmentCard(appointment: a)),
-                ],
+                );
+              },
+              onDismissed: (_) => ctrl.deleteService(svc.id),
+              child: _ServiceCard(
+                service: svc,
+                onEdit: () => _showServiceSheet(context, editing: svc),
+                onToggle: () => ctrl.updateService(svc.copyWith(isActive: !svc.isActive)),
               ),
+            );
+          },
+        );
+      }),
+    );
+  }
+}
+
+class _ServiceCard extends StatelessWidget {
+  final ServiceModel service;
+  final VoidCallback onEdit;
+  final VoidCallback onToggle;
+
+  const _ServiceCard({required this.service, required this.onEdit, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: service.isActive ? Colors.transparent : Colors.grey.shade200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6)],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: service.isActive ? _kPrimary.withOpacity(0.1) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
             ),
+            child: Icon(Icons.content_cut, color: service.isActive ? _kPrimary : Colors.grey, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  service.name,
+                  style: TextStyle(
+                    fontFamily: 'Vazirmatn',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: service.isActive ? Colors.black87 : Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Text(
+                      PersianUtils.formatPrice(service.price),
+                      style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: service.isActive ? _kSuccess : Colors.grey),
+                    ),
+                    const Text(' • ', style: TextStyle(color: Colors.grey)),
+                    Text(
+                      '${PersianUtils.toPersianDigits(service.durationMinutes.toString())} دقیقه',
+                      style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: service.isActive,
+            onChanged: (_) => onToggle(),
+            activeColor: _kSuccess,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: _kPrimary, size: 20),
+            onPressed: onEdit,
           ),
         ],
       ),
@@ -267,54 +696,809 @@ class _DashboardTab extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
+class _ServiceSheet extends StatefulWidget {
+  final ServiceModel? editing;
+  final String salonId;
+
+  const _ServiceSheet({this.editing, required this.salonId});
+
+  @override
+  State<_ServiceSheet> createState() => _ServiceSheetState();
+}
+
+class _ServiceSheetState extends State<_ServiceSheet> {
+  final _nameCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _durationCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.editing != null) {
+      _nameCtrl.text = widget.editing!.name;
+      _priceCtrl.text = widget.editing!.price.toString();
+      _durationCtrl.text = widget.editing!.durationMinutes.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _priceCtrl.dispose();
+    _durationCtrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!_formKey.currentState!.validate()) return;
+    final ctrl = OwnerController.to;
+    final isEdit = widget.editing != null;
+    final svc = ServiceModel(
+      id: isEdit ? widget.editing!.id : 'sv_${DateTime.now().millisecondsSinceEpoch}',
+      salonId: widget.salonId,
+      name: _nameCtrl.text.trim(),
+      price: int.parse(_priceCtrl.text.trim()),
+      durationMinutes: int.parse(_durationCtrl.text.trim()),
+      category: 'general',
+      isActive: isEdit ? widget.editing!.isActive : true,
+    );
+    if (isEdit) {
+      ctrl.updateService(svc);
+    } else {
+      ctrl.addService(svc);
+    }
+    Get.back();
+    Get.snackbar(
+      isEdit ? 'ویرایش شد' : 'اضافه شد',
+      'خدمت "${svc.name}" ${isEdit ? "ویرایش" : "اضافه"} شد',
+      backgroundColor: _kSuccess,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottom),
+      decoration: const BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              widget.editing == null ? 'خدمت جدید' : 'ویرایش خدمت',
+              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: _kPrimary),
+            ),
+            const SizedBox(height: 16),
+            _SheetField(
+              controller: _nameCtrl,
+              label: 'نام خدمت',
+              icon: Icons.label_outline,
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'نام الزامی است' : null,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _SheetField(
+                    controller: _priceCtrl,
+                    label: 'قیمت (تومان)',
+                    icon: Icons.attach_money,
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'الزامی';
+                      if (int.tryParse(v.trim()) == null) return 'عدد وارد کنید';
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _SheetField(
+                    controller: _durationCtrl,
+                    label: 'مدت (دقیقه)',
+                    icon: Icons.timer_outlined,
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'الزامی';
+                      if (int.tryParse(v.trim()) == null) return 'عدد وارد کنید';
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kPrimary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  widget.editing == null ? 'افزودن خدمت' : 'ذخیره تغییرات',
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 15),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB 4 — Stats
+// ════════════════════════════════════════════════════════════════════════════
+
+class _StatsTab extends StatelessWidget {
+  const _StatsTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('آمار و درآمد', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+      ),
+      body: Obx(() {
+        final ctrl = OwnerController.to;
+        final revenues = ctrl.last7DaysRevenue;
+        final maxRev = revenues.isEmpty ? 1 : (revenues.reduce((a, b) => a > b ? a : b) == 0 ? 1 : revenues.reduce((a, b) => a > b ? a : b));
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Revenue cards
+            Row(
+              children: [
+                _RevCard(label: 'امروز', value: PersianUtils.formatPriceShort(ctrl.todayRevenue), color: _kAccent),
+                const SizedBox(width: 12),
+                _RevCard(label: 'هفتگی', value: PersianUtils.formatPriceShort(ctrl.weekRevenue), color: _kPrimary),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _RevCard(label: 'ماهانه', value: PersianUtils.formatPriceShort(ctrl.monthRevenue), color: _kSuccess),
+                const SizedBox(width: 12),
+                _RevCard(label: 'نوبت‌های ماه', value: PersianUtils.toPersianDigits(ctrl.monthAppointmentCount.toString()), color: _kWarning),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // 7-day chart
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _kSurface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('درآمد ۷ روز گذشته', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary)),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 140,
+                    child: _BarChart(revenues: revenues, maxValue: maxRev),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(7, (i) {
+                      final day = DateTime.now().subtract(Duration(days: 6 - i));
+                      return Expanded(
+                        child: Text(
+                          PersianUtils.toPersianDigits(day.day.toString()),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 10, color: Colors.grey),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Performance
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _kSurface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('عملکرد', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary)),
+                  const SizedBox(height: 12),
+                  _PerfRow(label: 'نرخ لغو', value: '${PersianUtils.toPersianDigits(ctrl.cancelRate.toStringAsFixed(1))}٪', color: ctrl.cancelRate > 20 ? _kDanger : _kSuccess),
+                  _PerfRow(label: 'تعداد خدمات', value: PersianUtils.toPersianDigits(ctrl.services.length.toString()), color: _kPrimary),
+                  _PerfRow(label: 'کل نوبت‌ها', value: PersianUtils.toPersianDigits(ctrl.appointments.length.toString()), color: _kAccent),
+                ],
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+class _BarChart extends StatelessWidget {
+  final List<int> revenues;
+  final int maxValue;
+
+  const _BarChart({required this.revenues, required this.maxValue});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: List.generate(revenues.length, (i) {
+        final ratio = revenues[i] / maxValue;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOut,
+                  height: 120 * ratio,
+                  decoration: BoxDecoration(
+                    color: i == revenues.length - 1 ? _kPrimary : _kAccent.withOpacity(0.6),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TAB 5 — Salon Profile
+// ════════════════════════════════════════════════════════════════════════════
+
+class _ProfileTab extends StatelessWidget {
+  const _ProfileTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('پروفایل سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+      ),
+      body: Obx(() {
+        final ctrl = OwnerController.to;
+        final salon = ctrl.salon.value;
+        final user = StorageService.getUser();
+
+        if (salon == null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.store_outlined, size: 72, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text('سالنی ثبت نشده است', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                const Text('برای شروع، سالن خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => Get.toNamed(Routes.barberRegister),
+                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  icon: const Icon(Icons.add_business),
+                  label: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Salon banner
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [_kPrimary, _kAccent], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.store, color: Colors.white, size: 40),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(salon.name, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+                        const SizedBox(height: 2),
+                        Text(salon.categoryLabel, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: salon.isActive,
+                    onChanged: (v) => ctrl.updateSalon(salon.copyWith(isActive: v)),
+                    activeColor: _kSuccess,
+                    inactiveThumbColor: Colors.white,
+                    inactiveTrackColor: Colors.white30,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Edit salon info button
+            _ActionTile(
+              icon: Icons.edit_outlined,
+              title: 'ویرایش اطلاعات سالن',
+              subtitle: salon.address,
+              onTap: () => _showEditSalonSheet(context, salon),
+            ),
+            const SizedBox(height: 8),
+
+            // Working hours
+            _SectionHeader(title: 'ساعت کاری', icon: Icons.schedule),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: _kSurface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+              ),
+              child: Column(
+                children: List.generate(7, (i) {
+                  final day = ctrl.workingHours[i];
+                  return _WorkingDayRow(
+                    dayName: _dayNames[i],
+                    isOff: day.isOff,
+                    start: day.start,
+                    end: day.end,
+                    isLast: i == 6,
+                    onToggle: (v) => ctrl.updateWorkingDay(i, WorkingDay(isOff: !v, start: day.start, end: day.end)),
+                    onTimeTap: (isStart) async {
+                      final current = isStart ? day.start : day.end;
+                      final parts = current.split(':');
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
+                        builder: (ctx, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
+                      );
+                      if (picked != null) {
+                        final timeStr = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                        ctrl.updateWorkingDay(i, WorkingDay(
+                          isOff: day.isOff,
+                          start: isStart ? timeStr : day.start,
+                          end: isStart ? day.end : timeStr,
+                        ));
+                      }
+                    },
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Personal profile
+            _SectionHeader(title: 'پروفایل شخصی', icon: Icons.person_outline),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: _kSurface, borderRadius: BorderRadius.circular(12)),
+              child: Column(
+                children: [
+                  _InfoRow(icon: Icons.person_outline, label: 'نام', value: user?.fullName ?? '—'),
+                  const Divider(height: 1),
+                  _InfoRow(icon: Icons.phone_outlined, label: 'شماره', value: user?.phone ?? '—'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Logout
+            OutlinedButton.icon(
+              onPressed: () async {
+                await StorageService.clear();
+                Get.offAllNamed('/splash');
+              },
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: _kDanger),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              icon: const Icon(Icons.logout, color: _kDanger),
+              label: const Text('خروج از حساب', style: TextStyle(fontFamily: 'Vazirmatn', color: _kDanger)),
+            ),
+            const SizedBox(height: 24),
+          ],
+        );
+      }),
+    );
+  }
+
+  void _showEditSalonSheet(BuildContext context, SalonModel salon) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditSalonSheet(salon: salon),
+    );
+  }
+}
+
+class _WorkingDayRow extends StatelessWidget {
+  final String dayName;
+  final bool isOff;
+  final String start;
+  final String end;
+  final bool isLast;
+  final ValueChanged<bool> onToggle;
+  final void Function(bool isStart) onTimeTap;
+
+  const _WorkingDayRow({
+    required this.dayName,
+    required this.isOff,
+    required this.start,
+    required this.end,
+    required this.isLast,
+    required this.onToggle,
+    required this.onTimeTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 52,
+                child: Text(
+                  dayName,
+                  style: TextStyle(
+                    fontFamily: 'Vazirmatn',
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isOff ? Colors.grey : Colors.black87,
+                  ),
+                ),
+              ),
+              Switch(value: !isOff, onChanged: onToggle, activeColor: _kSuccess, materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              const Spacer(),
+              if (!isOff) ...[
+                GestureDetector(
+                  onTap: () => onTimeTap(true),
+                  child: _TimeChip(time: start),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6),
+                  child: Text('تا', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
+                ),
+                GestureDetector(
+                  onTap: () => onTimeTap(false),
+                  child: _TimeChip(time: end),
+                ),
+              ] else
+                const Text('تعطیل', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+        ),
+        if (!isLast) const Divider(height: 1, indent: 16, endIndent: 16),
+      ],
+    );
+  }
+}
+
+class _TimeChip extends StatelessWidget {
+  final String time;
+  const _TimeChip({required this.time});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: _kPrimary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _kPrimary.withOpacity(0.2)),
+      ),
+      child: Text(
+        PersianUtils.toPersianDigits(time),
+        style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: _kPrimary),
+      ),
+    );
+  }
+}
+
+class _EditSalonSheet extends StatefulWidget {
+  final SalonModel salon;
+  const _EditSalonSheet({required this.salon});
+  @override
+  State<_EditSalonSheet> createState() => _EditSalonSheetState();
+}
+
+class _EditSalonSheetState extends State<_EditSalonSheet> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _addressCtrl;
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _phoneCtrl;
+  late SalonCategory _category;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.salon.name);
+    _addressCtrl = TextEditingController(text: widget.salon.address);
+    _descCtrl = TextEditingController(text: widget.salon.description);
+    _phoneCtrl = TextEditingController(text: widget.salon.phone ?? '');
+    _category = widget.salon.category;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose(); _addressCtrl.dispose(); _descCtrl.dispose(); _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!_formKey.currentState!.validate()) return;
+    OwnerController.to.updateSalon(widget.salon.copyWith(
+      name: _nameCtrl.text.trim(),
+      address: _addressCtrl.text.trim(),
+      description: _descCtrl.text.trim(),
+      phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+      category: _category,
+    ));
+    Get.back();
+    Get.snackbar('ذخیره شد', 'اطلاعات سالن به‌روز شد', backgroundColor: _kSuccess, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottom),
+      decoration: const BoxDecoration(color: _kSurface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 16),
+              const Text('ویرایش اطلاعات سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: _kPrimary)),
+              const SizedBox(height: 16),
+              _SheetField(controller: _nameCtrl, label: 'نام سالن', icon: Icons.store_outlined, validator: (v) => (v == null || v.trim().length < 2) ? 'نام باید حداقل ۲ کاراکتر باشد' : null),
+              const SizedBox(height: 12),
+              _SheetField(controller: _addressCtrl, label: 'آدرس', icon: Icons.location_on_outlined, validator: (v) => (v == null || v.trim().length < 5) ? 'آدرس باید حداقل ۵ کاراکتر باشد' : null),
+              const SizedBox(height: 12),
+              _SheetField(controller: _phoneCtrl, label: 'شماره تماس (اختیاری)', icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+              const SizedBox(height: 12),
+              _SheetField(controller: _descCtrl, label: 'توضیحات', icon: Icons.description_outlined, maxLines: 3),
+              const SizedBox(height: 12),
+              // Category
+              Row(
+                children: [
+                  _CatChip(label: 'مردانه', icon: Icons.man_outlined, selected: _category == SalonCategory.male, onTap: () => setState(() => _category = SalonCategory.male)),
+                  const SizedBox(width: 8),
+                  _CatChip(label: 'زنانه', icon: Icons.woman_outlined, selected: _category == SalonCategory.female, onTap: () => setState(() => _category = SalonCategory.female)),
+                  const SizedBox(width: 8),
+                  _CatChip(label: 'یونیسکس', icon: Icons.people_outline, selected: _category == SalonCategory.unisex, onTap: () => setState(() => _category = SalonCategory.unisex)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _save,
+                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: const Text('ذخیره', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Shared widgets
+// ════════════════════════════════════════════════════════════════════════════
+
+class _AptCard extends StatelessWidget {
+  final AppointmentModel apt;
+  final bool showActions;
+  const _AptCard({required this.apt, this.showActions = false});
+
+  Color get _statusColor {
+    switch (apt.status) {
+      case AppointmentStatus.pending: return _kWarning;
+      case AppointmentStatus.confirmed: return _kSuccess;
+      case AppointmentStatus.done: return _kPrimary;
+      case AppointmentStatus.cancelled: return _kDanger;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = OwnerController.to;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6)],
+        border: Border(right: BorderSide(color: _statusColor, width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                PersianUtils.formatTime(apt.startTime),
+                style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '← ${PersianUtils.formatTime(apt.endTime)}',
+                style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: _statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text(apt.statusLabel, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 11, fontWeight: FontWeight.w600, color: _statusColor)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(apt.serviceNames.join('، '), style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(
+            PersianUtils.gregorianToJalali(apt.date),
+            style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey),
+          ),
+          if (showActions && (apt.status == AppointmentStatus.pending || apt.status == AppointmentStatus.confirmed)) ...[
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (apt.status == AppointmentStatus.pending)
+                  _AptAction(
+                    label: 'تأیید',
+                    color: _kSuccess,
+                    icon: Icons.check_circle_outline,
+                    onTap: () => ctrl.confirmAppointment(apt.id),
+                  ),
+                if (apt.status == AppointmentStatus.confirmed) ...[
+                  _AptAction(
+                    label: 'انجام شد',
+                    color: _kPrimary,
+                    icon: Icons.done_all,
+                    onTap: () => ctrl.completeAppointment(apt.id),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                const SizedBox(width: 8),
+                _AptAction(
+                  label: 'لغو',
+                  color: _kDanger,
+                  icon: Icons.cancel_outlined,
+                  onTap: () => ctrl.cancelAppointmentByOwner(apt.id),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AptAction extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onTap;
+  const _AptAction({required this.label, required this.color, required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
   final Color color;
-
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
+  const _MiniStat({required this.label, required this.value, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withOpacity(0.15)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(width: 12),
+            Icon(icon, color: color, size: 26),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontFamily: 'Vazirmatn',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: color,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontFamily: 'Vazirmatn',
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                  Text(value, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, fontWeight: FontWeight.w800, color: color)),
+                  Text(label, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 10, color: Colors.grey)),
                 ],
               ),
             ),
@@ -325,413 +1509,256 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─── Appointments Tab ────────────────────────────────────────────────────────
-
-class _AppointmentsTab extends StatelessWidget {
-  const _AppointmentsTab();
+class _RevCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _RevCard({required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final upcoming = MockData.appointments
-        .where((a) =>
-            a.date.isAfter(DateTime.now().subtract(const Duration(hours: 1))) &&
-            a.status != AppointmentStatus.cancelled)
-        .toList()
-      ..sort((a, b) {
-        final dateCmp = a.date.compareTo(b.date);
-        if (dateCmp != 0) return dateCmp;
-        return a.startTime.compareTo(b.startTime);
-      });
-
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('نوبت‌ها'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, fontWeight: FontWeight.w800, color: color)),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
+          ],
+        ),
       ),
-      backgroundColor: AppColors.background,
-      body: upcoming.isEmpty
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.calendar_month_outlined, size: 64, color: AppColors.textSecondary),
-                  SizedBox(height: 16),
-                  Text(
-                    'نوبت آینده‌ای ندارید',
-                    style: TextStyle(
-                      fontFamily: 'Vazirmatn',
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: upcoming.length,
-              itemBuilder: (_, i) => _AppointmentCard(appointment: upcoming[i]),
-            ),
     );
   }
 }
 
-class _AppointmentCard extends StatelessWidget {
-  final AppointmentModel appointment;
-
-  const _AppointmentCard({required this.appointment});
+class _PerfRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _PerfRow({required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-        boxShadow: [
-          BoxShadow(color: AppColors.cardShadow, blurRadius: 4),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  PersianUtils.formatTime(appointment.startTime),
-                  style: const TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                  ),
-                ),
-                Text(
-                  PersianUtils.toPersianDigits(appointment.date.day.toString()),
-                  style: const TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  appointment.serviceNames.join('، '),
-                  style: const TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  appointment.salonName,
-                  style: const TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              PersianUtils.formatTime(appointment.startTime),
-              style: const TextStyle(
-                fontFamily: 'Vazirmatn',
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.success,
-              ),
-            ),
-          ),
+          Expanded(child: Text(label, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.grey))),
+          Text(value, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w700, color: color)),
         ],
       ),
     );
   }
 }
 
-// ─── Salon Tab ──────────────────────────────────────────────────────────────
-
-class _SalonTab extends StatelessWidget {
-  const _SalonTab();
-
-  SalonModel? get _barberSalon {
-    final userId = StorageService.getUser()?.id;
-    if (userId == null) return null;
-    try {
-      return MockData.salons.firstWhere((s) => s.ownerId == userId);
-    } catch (_) {
-      return null;
-    }
-  }
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const _SectionHeader({required this.title, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    final salon = _barberSalon;
-
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('سالن من'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        actions: [
-          if (salon == null)
-            TextButton(
-              onPressed: () => Get.toNamed(Routes.barberRegister),
-              child: const Text(
-                'ثبت سالن',
-                style: TextStyle(color: Colors.white, fontFamily: 'Vazirmatn'),
-              ),
-            ),
-        ],
-      ),
-      backgroundColor: AppColors.background,
-      body: salon == null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.store_outlined, size: 72, color: AppColors.textSecondary),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'سالنی ثبت نشده است',
-                    style: TextStyle(
-                      fontFamily: 'Vazirmatn',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'برای شروع، سالن خود را ثبت کنید',
-                    style: TextStyle(
-                      fontFamily: 'Vazirmatn',
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () => Get.toNamed(Routes.barberRegister),
-                    icon: const Icon(Icons.add_business),
-                    label: const Text(
-                      'ثبت سالن',
-                      style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.accent],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.store, color: Colors.white, size: 36),
-                      const SizedBox(height: 12),
-                      Text(
-                        salon.name,
-                        style: const TextStyle(
-                          fontFamily: 'Vazirmatn',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        salon.categoryLabel,
-                        style: const TextStyle(
-                          fontFamily: 'Vazirmatn',
-                          fontSize: 13,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _InfoTile(icon: Icons.location_on_outlined, label: 'آدرس', value: salon.address),
-                _InfoTile(icon: Icons.description_outlined, label: 'توضیحات', value: salon.description),
-                _InfoTile(icon: Icons.star_outline, label: 'امتیاز', value: salon.rating.toStringAsFixed(1)),
-              ],
-            ),
+    return Row(
+      children: [
+        Icon(icon, color: _kPrimary, size: 20),
+        const SizedBox(width: 8),
+        Text(title, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary)),
+      ],
     );
   }
 }
 
-class _InfoTile extends StatelessWidget {
+class _EmptyState extends StatelessWidget {
+  final String message;
+  final IconData icon;
+  const _EmptyState({required this.message, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 56, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            Text(message, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.grey)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final Color color;
+  final VoidCallback onTap;
+  const _FilterChip({required this.label, required this.isSelected, this.color = _kPrimary, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? color : color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.4)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Vazirmatn',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : color,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _ActionTile({required this.icon, required this.title, required this.subtitle, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: _kSurface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(icon, color: _kPrimary, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text(subtitle, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_left, color: Colors.grey, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-
-  const _InfoTile({required this.icon, required this.label, required this.value});
+  const _InfoRow({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppColors.secondary, size: 20),
+          Icon(icon, color: _kPrimary, size: 20),
           const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          Text(label, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.grey)),
+          const Spacer(),
+          Text(value, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 }
 
-// ─── Profile Tab ─────────────────────────────────────────────────────────────
+class _SheetField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final int? maxLines;
 
-class _ProfileTab extends StatelessWidget {
-  final String barberName;
-
-  const _ProfileTab({required this.barberName});
+  const _SheetField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    this.validator,
+    this.keyboardType,
+    this.maxLines = 1,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final user = StorageService.getUser();
-
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('پروفایل'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+    return TextFormField(
+      controller: controller,
+      textDirection: TextDirection.rtl,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+        prefixIcon: Icon(icon, color: _kPrimary, size: 20),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
-      backgroundColor: AppColors.background,
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 16),
-          Center(
-            child: Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                color: AppColors.secondary.withOpacity(0.15),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.secondary, width: 2),
-              ),
-              child: const Icon(Icons.person, size: 50, color: AppColors.secondary),
-            ),
+      validator: validator,
+    );
+  }
+}
+
+class _CatChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _CatChip({required this.label, required this.icon, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? _kPrimary.withOpacity(0.1) : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: selected ? _kPrimary : Colors.grey.shade200, width: selected ? 1.5 : 1),
           ),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              barberName,
-              style: const TextStyle(
-                fontFamily: 'Vazirmatn',
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-              ),
-            ),
+          child: Column(
+            children: [
+              Icon(icon, color: selected ? _kPrimary : Colors.grey, size: 22),
+              const SizedBox(height: 4),
+              Text(label, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: selected ? _kPrimary : Colors.grey, fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
+            ],
           ),
-          const SizedBox(height: 4),
-          const Center(
-            child: Text(
-              'آرایشگر',
-              style: TextStyle(
-                fontFamily: 'Vazirmatn',
-                fontSize: 13,
-                color: AppColors.secondary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (user?.phone != null)
-            _InfoTile(icon: Icons.phone_outlined, label: 'شماره موبایل', value: user!.phone),
-          const SizedBox(height: 24),
-          OutlinedButton.icon(
-            onPressed: () async {
-              await StorageService.clear();
-              Get.offAllNamed('/splash');
-            },
-            icon: const Icon(Icons.logout, color: AppColors.error),
-            label: const Text(
-              'خروج از حساب',
-              style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.error),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.error),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

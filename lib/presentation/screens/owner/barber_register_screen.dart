@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../controllers/owner_controller.dart';
 import '../../../core/storage/storage_service.dart';
-import '../../../data/mock/mock_data.dart';
 import '../../../data/models/salon_model.dart';
 
 class BarberRegisterScreen extends StatefulWidget {
@@ -81,14 +81,14 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
       images: const [],
     );
 
-    MockData.salons.add(salon);
+    OwnerController.to.registerSalon(salon);
     setState(() => _isLoading = false);
 
     Get.back();
     Get.snackbar(
       'موفق',
       'سالن "${salon.name}" با موفقیت ثبت شد',
-      backgroundColor: AppColors.success,
+      backgroundColor: const Color(0xFF28A745),
       colorText: Colors.white,
       snackPosition: SnackPosition.BOTTOM,
     );
