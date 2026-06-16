@@ -14,6 +14,10 @@ class SalonModel {
   final SalonCategory category;
   final String ownerId;
   final List<String> images;
+  final String? phone;
+  final bool isActive;
+  final String openTime;
+  final String closeTime;
 
   const SalonModel({
     required this.id,
@@ -29,7 +33,41 @@ class SalonModel {
     required this.category,
     required this.ownerId,
     this.images = const [],
+    this.phone,
+    this.isActive = true,
+    this.openTime = '09:00',
+    this.closeTime = '21:00',
   });
+
+  SalonModel copyWith({
+    String? name,
+    String? description,
+    String? address,
+    SalonCategory? category,
+    String? phone,
+    bool? isActive,
+    String? openTime,
+    String? closeTime,
+  }) =>
+      SalonModel(
+        id: id,
+        name: name ?? this.name,
+        description: description ?? this.description,
+        address: address ?? this.address,
+        lat: lat,
+        lng: lng,
+        coverImage: coverImage,
+        rating: rating,
+        reviewCount: reviewCount,
+        isVerified: isVerified,
+        category: category ?? this.category,
+        ownerId: ownerId,
+        images: images,
+        phone: phone ?? this.phone,
+        isActive: isActive ?? this.isActive,
+        openTime: openTime ?? this.openTime,
+        closeTime: closeTime ?? this.closeTime,
+      );
 
   String get categoryLabel {
     switch (category) {
@@ -70,5 +108,9 @@ class SalonModel {
         ),
         ownerId: json['owner_id'],
         images: List<String>.from(json['images'] ?? []),
+        phone: json['phone'],
+        isActive: json['is_active'] ?? true,
+        openTime: json['open_time'] ?? '09:00',
+        closeTime: json['close_time'] ?? '21:00',
       );
 }
