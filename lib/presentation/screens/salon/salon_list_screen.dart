@@ -127,7 +127,6 @@ class _SalonListScreenState extends State<SalonListScreen> {
                     ('all', 'همه'),
                     ('male', 'مردانه'),
                     ('female', 'زنانه'),
-                    ('unisex', 'یونیسکس'),
                   ])
                     ChoiceChip(
                       label: Text(

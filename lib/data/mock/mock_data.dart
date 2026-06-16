@@ -1,3 +1,4 @@
+import '../models/user_model.dart';
 import '../models/salon_model.dart';
 import '../models/stylist_model.dart';
 import '../models/service_model.dart';
@@ -6,6 +7,7 @@ import '../models/appointment_model.dart';
 import '../models/working_hours_model.dart';
 
 class MockData {
+  static List<UserModel> users = [];
   static List<SalonModel> salons = [];
   static List<StylistModel> stylists = [];
   static List<ServiceModel> services = [];
@@ -14,12 +16,56 @@ class MockData {
   static List<WorkingHoursModel> workingHours = [];
 
   static void init() {
+    _initUsers();
     _initSalons();
     _initStylists();
     _initServices();
     _initWorkingHours();
     _initReviews();
     _initAppointments();
+  }
+
+  static void _initUsers() {
+    users = [
+      UserModel(
+        id: 'u_demo1',
+        fullName: 'علی رضایی',
+        phone: '09123456789',
+        email: 'ali@demo.com',
+        password: '123456',
+        role: UserRole.customer,
+        createdAt: DateTime(2024, 1, 1),
+      ),
+      UserModel(
+        id: 'u_demo2',
+        fullName: 'سارا محمدی',
+        phone: '09987654321',
+        email: 'sara@demo.com',
+        password: '123456',
+        role: UserRole.customer,
+        createdAt: DateTime(2024, 1, 1),
+      ),
+      UserModel(
+        id: 'b_demo1',
+        fullName: 'حسین نوری',
+        phone: '09111111111',
+        email: 'barber@demo.com',
+        password: '123456',
+        role: UserRole.barber,
+        stylistStatus: 'approved',
+        createdAt: DateTime(2024, 1, 1),
+      ),
+      UserModel(
+        id: 'b_demo2',
+        fullName: 'مریم صادقی',
+        phone: '09222222222',
+        email: 'stylist@demo.com',
+        password: '123456',
+        role: UserRole.barber,
+        stylistStatus: 'pending',
+        createdAt: DateTime(2024, 1, 1),
+      ),
+    ];
   }
 
   static void _initSalons() {

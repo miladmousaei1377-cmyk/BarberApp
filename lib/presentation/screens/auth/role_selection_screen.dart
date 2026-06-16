@@ -9,8 +9,6 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final phone = Get.arguments as String? ?? '';
-
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: SafeArea(
@@ -61,10 +59,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   title: 'مشتری',
                   description: 'رزرو نوبت آنلاین',
                   gradientColors: [const Color(0xFF2D2D44), const Color(0xFF3D3D5C)],
-                  onTap: () => Get.toNamed(
-                    Routes.profileSetup,
-                    arguments: {'phone': phone, 'role': 'customer'},
-                  ),
+                  onTap: () => Get.toNamed(Routes.customerLogin),
                 ),
               ),
               const SizedBox(height: 20),
@@ -75,10 +70,7 @@ class RoleSelectionScreen extends StatelessWidget {
                   title: 'آرایشگر',
                   description: 'مدیریت سالن و نوبت‌ها',
                   gradientColors: [AppColors.secondary, const Color(0xFFB03040)],
-                  onTap: () => Get.toNamed(
-                    Routes.profileSetup,
-                    arguments: {'phone': phone, 'role': 'barber'},
-                  ),
+                  onTap: () => Get.toNamed(Routes.stylistLogin),
                 ),
               ),
               const Spacer(),

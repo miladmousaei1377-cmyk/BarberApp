@@ -8,7 +8,7 @@ import '../../../data/models/appointment_model.dart';
 import '../../../data/models/service_model.dart';
 import '../../../data/models/salon_model.dart';
 
-// ── Panel colours ───────────────────────────────────────────────────────────
+// ── Panel colours ─────────────────────────────────────────────────────────────
 const _kPrimary = Color(0xFF0F3460);
 const _kAccent  = Color(0xFF533483);
 const _kSuccess = Color(0xFF28A745);
@@ -17,11 +17,10 @@ const _kDanger  = Color(0xFFDC3545);
 const _kBg      = Color(0xFFF4F6FA);
 const _kSurface = Colors.white;
 
-// ── Day names ────────────────────────────────────────────────────────────────
 const _dayNames = ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'];
 
 // ════════════════════════════════════════════════════════════════════════════
-// Main screen
+// Main screen  —  tabs: داشبورد / نوبت‌ها / سالن / آمار / پروفایل
 // ════════════════════════════════════════════════════════════════════════════
 
 class BarberPanelScreen extends StatefulWidget {
@@ -54,9 +53,9 @@ class _BarberPanelScreenState extends State<BarberPanelScreen> {
         children: const [
           _DashboardTab(),
           _AppointmentsTab(),
-          _ServicesTab(),
+          _SalonManagementTab(),
           _StatsTab(),
-          _ProfileTab(),
+          _OwnerProfileTab(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -76,9 +75,9 @@ class _BarberPanelScreenState extends State<BarberPanelScreen> {
             label: 'نوبت‌ها',
           ),
           NavigationDestination(
-            icon: Icon(Icons.design_services_outlined),
-            selectedIcon: Icon(Icons.design_services, color: _kPrimary),
-            label: 'خدمات',
+            icon: Icon(Icons.store_outlined),
+            selectedIcon: Icon(Icons.store, color: _kPrimary),
+            label: 'سالن',
           ),
           NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),
@@ -86,9 +85,9 @@ class _BarberPanelScreenState extends State<BarberPanelScreen> {
             label: 'آمار',
           ),
           NavigationDestination(
-            icon: Icon(Icons.store_outlined),
-            selectedIcon: Icon(Icons.store, color: _kPrimary),
-            label: 'سالن',
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person, color: _kPrimary),
+            label: 'پروفایل',
           ),
         ],
       ),
@@ -163,7 +162,6 @@ class _DashboardTab extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // Stats row
                   Row(
                     children: [
                       _MiniStat(
@@ -200,7 +198,6 @@ class _DashboardTab extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  // No-salon prompt
                   if (!hasSalon) ...[
                     Container(
                       width: double.infinity,
@@ -245,7 +242,6 @@ class _DashboardTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                   ],
-                  // Today's appointments
                   _SectionHeader(title: 'نوبت‌های امروز', icon: Icons.schedule),
                   const SizedBox(height: 8),
                   if (todayApts.isEmpty)
@@ -352,7 +348,6 @@ class _WeeklyAptsState extends State<_WeeklyApts> {
       final dayApts = ctrl.appointmentsForDate(_selected);
       return Column(
         children: [
-          // Week bar
           Container(
             color: _kSurface,
             height: 80,
@@ -379,21 +374,12 @@ class _WeeklyAptsState extends State<_WeeklyApts> {
                       children: [
                         Text(
                           PersianUtils.weekDayName(day).substring(0, 2),
-                          style: TextStyle(
-                            fontFamily: 'Vazirmatn',
-                            fontSize: 11,
-                            color: isSelected ? Colors.white70 : Colors.grey,
-                          ),
+                          style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 11, color: isSelected ? Colors.white70 : Colors.grey),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           PersianUtils.toPersianDigits(day.day.toString()),
-                          style: TextStyle(
-                            fontFamily: 'Vazirmatn',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? Colors.white : _kPrimary,
-                          ),
+                          style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, fontWeight: FontWeight.w700, color: isSelected ? Colors.white : _kPrimary),
                         ),
                         if (count > 0)
                           Container(
@@ -405,12 +391,7 @@ class _WeeklyAptsState extends State<_WeeklyApts> {
                             ),
                             child: Text(
                               PersianUtils.toPersianDigits(count.toString()),
-                              style: const TextStyle(
-                                fontFamily: 'Vazirmatn',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
+                              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
                             ),
                           ),
                       ],
@@ -455,7 +436,6 @@ class _AllAptsState extends State<_AllApts> {
       });
       return Column(
         children: [
-          // Filter chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -489,11 +469,33 @@ class _AllAptsState extends State<_AllApts> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TAB 3 — Services
+// TAB 3 — Salon Management  (اطلاعات | خدمات)
 // ════════════════════════════════════════════════════════════════════════════
 
-class _ServicesTab extends StatelessWidget {
-  const _ServicesTab();
+class _SalonManagementTab extends StatefulWidget {
+  const _SalonManagementTab();
+  @override
+  State<_SalonManagementTab> createState() => _SalonManagementTabState();
+}
+
+class _SalonManagementTabState extends State<_SalonManagementTab> with SingleTickerProviderStateMixin {
+  late final TabController _tabCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl.addListener(_onTabChange);
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.removeListener(_onTabChange);
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onTabChange() => setState(() {});
 
   void _showServiceSheet(BuildContext context, {ServiceModel? editing}) {
     final ctrl = OwnerController.to;
@@ -512,113 +514,287 @@ class _ServicesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onServicesTab = _tabCtrl.index == 1;
     return Scaffold(
       backgroundColor: _kBg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: _kPrimary,
         foregroundColor: Colors.white,
-        title: const Text('خدمات', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+        title: const Text('سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: () => _showServiceSheet(context),
-          ),
+          if (onServicesTab)
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              onPressed: () => _showServiceSheet(context),
+            ),
+        ],
+        bottom: TabBar(
+          controller: _tabCtrl,
+          indicatorColor: Colors.white,
+          labelStyle: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          tabs: const [Tab(text: 'اطلاعات'), Tab(text: 'خدمات')],
+        ),
+      ),
+      floatingActionButton: onServicesTab
+          ? FloatingActionButton.extended(
+              onPressed: () => _showServiceSheet(context),
+              backgroundColor: _kPrimary,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('خدمت جدید', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.white, fontWeight: FontWeight.w600)),
+            )
+          : null,
+      body: TabBarView(
+        controller: _tabCtrl,
+        children: [
+          _SalonInfoSubTab(onAddServicesRequested: () => _tabCtrl.animateTo(1)),
+          _ServicesSubTab(onShowSheet: _showServiceSheet),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showServiceSheet(context),
-        backgroundColor: _kPrimary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('خدمت جدید', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.white, fontWeight: FontWeight.w600)),
-      ),
-      body: Obx(() {
-        final ctrl = OwnerController.to;
-        if (ctrl.salon.value == null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.design_services_outlined, size: 64, color: Colors.grey),
-                const SizedBox(height: 12),
-                const Text('ابتدا سالن خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => Get.toNamed(Routes.barberRegister),
-                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
-                  child: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn')),
-                ),
-              ],
-            ),
-          );
-        }
-        final svcs = ctrl.services;
-        if (svcs.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.design_services_outlined, size: 64, color: Colors.grey),
-                const SizedBox(height: 12),
-                const Text('خدماتی اضافه نکرده‌اید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => _showServiceSheet(context),
-                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
-                  icon: const Icon(Icons.add),
-                  label: const Text('افزودن خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
-                ),
-              ],
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-          itemCount: svcs.length,
-          itemBuilder: (_, i) {
-            final svc = svcs[i];
-            return Dismissible(
-              key: Key(svc.id),
-              direction: DismissDirection.endToStart,
-              background: Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                decoration: BoxDecoration(
-                  color: _kDanger,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.only(left: 20),
-                child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
-              ),
-              confirmDismiss: (_) async {
-                return await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('حذف خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
-                    content: Text('آیا خدمت "${svc.name}" حذف شود؟', style: const TextStyle(fontFamily: 'Vazirmatn')),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('خیر', style: TextStyle(fontFamily: 'Vazirmatn'))),
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('بله، حذف شود', style: TextStyle(fontFamily: 'Vazirmatn', color: _kDanger)),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              onDismissed: (_) => ctrl.deleteService(svc.id),
-              child: _ServiceCard(
-                service: svc,
-                onEdit: () => _showServiceSheet(context, editing: svc),
-                onToggle: () => ctrl.updateService(svc.copyWith(isActive: !svc.isActive)),
-              ),
-            );
-          },
-        );
-      }),
     );
   }
 }
+
+// ── Sub-tab: Salon Info ───────────────────────────────────────────────────────
+
+class _SalonInfoSubTab extends StatelessWidget {
+  const _SalonInfoSubTab({this.onAddServicesRequested});
+  final VoidCallback? onAddServicesRequested;
+
+  void _showEditSalonSheet(BuildContext context, SalonModel salon) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _EditSalonSheet(salon: salon),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final ctrl = OwnerController.to;
+      final salon = ctrl.salon.value;
+
+      if (salon == null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.store_outlined, size: 72, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('سالنی ثبت نشده است', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              const Text('برای شروع، سالن خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Get.toNamed(Routes.barberRegister);
+                  if (result == 'addServices') onAddServicesRequested?.call();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kPrimary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.add_business),
+                label: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [_kPrimary, _kAccent], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.store, color: Colors.white, size: 40),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(salon.name, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+                      const SizedBox(height: 2),
+                      Text(salon.categoryLabel, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: salon.isActive,
+                  onChanged: (v) => ctrl.updateSalon(salon.copyWith(isActive: v)),
+                  activeColor: _kSuccess,
+                  inactiveThumbColor: Colors.white,
+                  inactiveTrackColor: Colors.white30,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _ActionTile(
+            icon: Icons.edit_outlined,
+            title: 'ویرایش اطلاعات سالن',
+            subtitle: salon.address,
+            onTap: () => _showEditSalonSheet(context, salon),
+          ),
+          const SizedBox(height: 16),
+          _SectionHeader(title: 'ساعت کاری', icon: Icons.schedule),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: _kSurface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+            ),
+            child: Column(
+              children: List.generate(7, (i) {
+                final day = ctrl.workingHours[i];
+                return _WorkingDayRow(
+                  dayName: _dayNames[i],
+                  isOff: day.isOff,
+                  start: day.start,
+                  end: day.end,
+                  isLast: i == 6,
+                  onToggle: (v) => ctrl.updateWorkingDay(i, WorkingDay(isOff: !v, start: day.start, end: day.end)),
+                  onTimeTap: (isStart) async {
+                    final current = isStart ? day.start : day.end;
+                    final parts = current.split(':');
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
+                      builder: (ctx, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
+                    );
+                    if (picked != null) {
+                      final t = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                      ctrl.updateWorkingDay(i, WorkingDay(
+                        isOff: day.isOff,
+                        start: isStart ? t : day.start,
+                        end: isStart ? day.end : t,
+                      ));
+                    }
+                  },
+                );
+              }),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      );
+    });
+  }
+}
+
+// ── Sub-tab: Services ─────────────────────────────────────────────────────────
+
+class _ServicesSubTab extends StatelessWidget {
+  final void Function(BuildContext, {ServiceModel? editing}) onShowSheet;
+  const _ServicesSubTab({required this.onShowSheet});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final ctrl = OwnerController.to;
+      if (ctrl.salon.value == null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.design_services_outlined, size: 64, color: Colors.grey),
+              const SizedBox(height: 12),
+              const Text('ابتدا سالن خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  final result = await Get.toNamed(Routes.barberRegister);
+                  if (result == 'addServices' && context.mounted) {
+                    onShowSheet(context);
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
+                child: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn')),
+              ),
+            ],
+          ),
+        );
+      }
+      final svcs = ctrl.services;
+      if (svcs.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.design_services_outlined, size: 64, color: Colors.grey),
+              const SizedBox(height: 12),
+              const Text('خدماتی اضافه نکرده‌اید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => onShowSheet(context),
+                style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
+                icon: const Icon(Icons.add),
+                label: const Text('افزودن خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
+              ),
+            ],
+          ),
+        );
+      }
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        itemCount: svcs.length,
+        itemBuilder: (_, i) {
+          final svc = svcs[i];
+          return Dismissible(
+            key: Key(svc.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(color: _kDanger, borderRadius: BorderRadius.circular(12)),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(left: 20),
+              child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+            ),
+            confirmDismiss: (_) async {
+              return await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('حذف خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
+                  content: Text('آیا خدمت "${svc.name}" حذف شود؟', style: const TextStyle(fontFamily: 'Vazirmatn')),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('خیر', style: TextStyle(fontFamily: 'Vazirmatn'))),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('بله، حذف شود', style: TextStyle(fontFamily: 'Vazirmatn', color: _kDanger)),
+                    ),
+                  ],
+                ),
+              );
+            },
+            onDismissed: (_) => ctrl.deleteService(svc.id),
+            child: _ServiceCard(
+              service: svc,
+              onEdit: () => onShowSheet(context, editing: svc),
+              onToggle: () => ctrl.updateService(svc.copyWith(isActive: !svc.isActive)),
+            ),
+          );
+        },
+      );
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Service widgets (shared between sub-tab and sheets)
+// ════════════════════════════════════════════════════════════════════════════
 
 class _ServiceCard extends StatelessWidget {
   final ServiceModel service;
@@ -773,9 +949,7 @@ class _ServiceSheetState extends State<_ServiceSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-            ),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 16),
             Text(
               widget.editing == null ? 'خدمت جدید' : 'ویرایش خدمت',
@@ -869,7 +1043,6 @@ class _StatsTab extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Revenue cards
             Row(
               children: [
                 _RevCard(label: 'امروز', value: PersianUtils.formatPriceShort(ctrl.todayRevenue), color: _kAccent),
@@ -886,7 +1059,6 @@ class _StatsTab extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
-            // 7-day chart
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -899,10 +1071,7 @@ class _StatsTab extends StatelessWidget {
                 children: [
                   const Text('درآمد ۷ روز گذشته', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary)),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    height: 140,
-                    child: _BarChart(revenues: revenues, maxValue: maxRev),
-                  ),
+                  SizedBox(height: 140, child: _BarChart(revenues: revenues, maxValue: maxRev)),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -921,7 +1090,6 @@ class _StatsTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            // Performance
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -984,360 +1152,89 @@ class _BarChart extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TAB 5 — Salon Profile
+// TAB 5 — Owner Profile
 // ════════════════════════════════════════════════════════════════════════════
 
-class _ProfileTab extends StatelessWidget {
-  const _ProfileTab();
+class _OwnerProfileTab extends StatelessWidget {
+  const _OwnerProfileTab();
 
   @override
   Widget build(BuildContext context) {
+    final user = StorageService.getUser();
+
     return Scaffold(
       backgroundColor: _kBg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: _kPrimary,
         foregroundColor: Colors.white,
-        title: const Text('پروفایل سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+        title: const Text('پروفایل', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
       ),
-      body: Obx(() {
-        final ctrl = OwnerController.to;
-        final salon = ctrl.salon.value;
-        final user = StorageService.getUser();
-
-        if (salon == null) {
-          return Center(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const SizedBox(height: 24),
+          Center(
+            child: Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: _kPrimary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person, size: 56, color: _kPrimary),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              user?.fullName ?? '—',
+              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 20, fontWeight: FontWeight.w800, color: _kPrimary),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Center(
+            child: Text(
+              user?.phone ?? '—',
+              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.grey),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: _kSurface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+            ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.store_outlined, size: 72, color: Colors.grey),
-                const SizedBox(height: 16),
-                const Text('سالنی ثبت نشده است', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                const Text('برای شروع، سالن خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () => Get.toNamed(Routes.barberRegister),
-                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  icon: const Icon(Icons.add_business),
-                  label: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
-                ),
+                _InfoRow(icon: Icons.person_outline, label: 'نام', value: user?.fullName ?? '—'),
+                const Divider(height: 1),
+                _InfoRow(icon: Icons.phone_outlined, label: 'شماره', value: user?.phone ?? '—'),
+                if (user?.email != null) ...[
+                  const Divider(height: 1),
+                  _InfoRow(icon: Icons.email_outlined, label: 'ایمیل', value: user!.email!),
+                ],
               ],
             ),
-          );
-        }
-
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Salon banner
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [_kPrimary, _kAccent], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.store, color: Colors.white, size: 40),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(salon.name, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
-                        const SizedBox(height: 2),
-                        Text(salon.categoryLabel, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.white70)),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: salon.isActive,
-                    onChanged: (v) => ctrl.updateSalon(salon.copyWith(isActive: v)),
-                    activeColor: _kSuccess,
-                    inactiveThumbColor: Colors.white,
-                    inactiveTrackColor: Colors.white30,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Edit salon info button
-            _ActionTile(
-              icon: Icons.edit_outlined,
-              title: 'ویرایش اطلاعات سالن',
-              subtitle: salon.address,
-              onTap: () => _showEditSalonSheet(context, salon),
-            ),
-            const SizedBox(height: 8),
-
-            // Working hours
-            _SectionHeader(title: 'ساعت کاری', icon: Icons.schedule),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: _kSurface,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
-              ),
-              child: Column(
-                children: List.generate(7, (i) {
-                  final day = ctrl.workingHours[i];
-                  return _WorkingDayRow(
-                    dayName: _dayNames[i],
-                    isOff: day.isOff,
-                    start: day.start,
-                    end: day.end,
-                    isLast: i == 6,
-                    onToggle: (v) => ctrl.updateWorkingDay(i, WorkingDay(isOff: !v, start: day.start, end: day.end)),
-                    onTimeTap: (isStart) async {
-                      final current = isStart ? day.start : day.end;
-                      final parts = current.split(':');
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1])),
-                        builder: (ctx, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
-                      );
-                      if (picked != null) {
-                        final timeStr = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-                        ctrl.updateWorkingDay(i, WorkingDay(
-                          isOff: day.isOff,
-                          start: isStart ? timeStr : day.start,
-                          end: isStart ? day.end : timeStr,
-                        ));
-                      }
-                    },
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Personal profile
-            _SectionHeader(title: 'پروفایل شخصی', icon: Icons.person_outline),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: _kSurface, borderRadius: BorderRadius.circular(12)),
-              child: Column(
-                children: [
-                  _InfoRow(icon: Icons.person_outline, label: 'نام', value: user?.fullName ?? '—'),
-                  const Divider(height: 1),
-                  _InfoRow(icon: Icons.phone_outlined, label: 'شماره', value: user?.phone ?? '—'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Logout
-            OutlinedButton.icon(
-              onPressed: () async {
-                await StorageService.clear();
-                Get.offAllNamed('/splash');
-              },
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: _kDanger),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              icon: const Icon(Icons.logout, color: _kDanger),
-              label: const Text('خروج از حساب', style: TextStyle(fontFamily: 'Vazirmatn', color: _kDanger)),
-            ),
-            const SizedBox(height: 24),
-          ],
-        );
-      }),
-    );
-  }
-
-  void _showEditSalonSheet(BuildContext context, SalonModel salon) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _EditSalonSheet(salon: salon),
-    );
-  }
-}
-
-class _WorkingDayRow extends StatelessWidget {
-  final String dayName;
-  final bool isOff;
-  final String start;
-  final String end;
-  final bool isLast;
-  final ValueChanged<bool> onToggle;
-  final void Function(bool isStart) onTimeTap;
-
-  const _WorkingDayRow({
-    required this.dayName,
-    required this.isOff,
-    required this.start,
-    required this.end,
-    required this.isLast,
-    required this.onToggle,
-    required this.onTimeTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 52,
-                child: Text(
-                  dayName,
-                  style: TextStyle(
-                    fontFamily: 'Vazirmatn',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isOff ? Colors.grey : Colors.black87,
-                  ),
-                ),
-              ),
-              Switch(value: !isOff, onChanged: onToggle, activeColor: _kSuccess, materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
-              const Spacer(),
-              if (!isOff) ...[
-                GestureDetector(
-                  onTap: () => onTimeTap(true),
-                  child: _TimeChip(time: start),
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6),
-                  child: Text('تا', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
-                ),
-                GestureDetector(
-                  onTap: () => onTimeTap(false),
-                  child: _TimeChip(time: end),
-                ),
-              ] else
-                const Text('تعطیل', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
-            ],
           ),
-        ),
-        if (!isLast) const Divider(height: 1, indent: 16, endIndent: 16),
-      ],
-    );
-  }
-}
-
-class _TimeChip extends StatelessWidget {
-  final String time;
-  const _TimeChip({required this.time});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: _kPrimary.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _kPrimary.withOpacity(0.2)),
-      ),
-      child: Text(
-        PersianUtils.toPersianDigits(time),
-        style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: _kPrimary),
-      ),
-    );
-  }
-}
-
-class _EditSalonSheet extends StatefulWidget {
-  final SalonModel salon;
-  const _EditSalonSheet({required this.salon});
-  @override
-  State<_EditSalonSheet> createState() => _EditSalonSheetState();
-}
-
-class _EditSalonSheetState extends State<_EditSalonSheet> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _addressCtrl;
-  late final TextEditingController _descCtrl;
-  late final TextEditingController _phoneCtrl;
-  late SalonCategory _category;
-  final _formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    super.initState();
-    _nameCtrl = TextEditingController(text: widget.salon.name);
-    _addressCtrl = TextEditingController(text: widget.salon.address);
-    _descCtrl = TextEditingController(text: widget.salon.description);
-    _phoneCtrl = TextEditingController(text: widget.salon.phone ?? '');
-    _category = widget.salon.category;
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose(); _addressCtrl.dispose(); _descCtrl.dispose(); _phoneCtrl.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    if (!_formKey.currentState!.validate()) return;
-    OwnerController.to.updateSalon(widget.salon.copyWith(
-      name: _nameCtrl.text.trim(),
-      address: _addressCtrl.text.trim(),
-      description: _descCtrl.text.trim(),
-      phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
-      category: _category,
-    ));
-    Get.back();
-    Get.snackbar('ذخیره شد', 'اطلاعات سالن به‌روز شد', backgroundColor: _kSuccess, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottom),
-      decoration: const BoxDecoration(color: _kSurface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 16),
-              const Text('ویرایش اطلاعات سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: _kPrimary)),
-              const SizedBox(height: 16),
-              _SheetField(controller: _nameCtrl, label: 'نام سالن', icon: Icons.store_outlined, validator: (v) => (v == null || v.trim().length < 2) ? 'نام باید حداقل ۲ کاراکتر باشد' : null),
-              const SizedBox(height: 12),
-              _SheetField(controller: _addressCtrl, label: 'آدرس', icon: Icons.location_on_outlined, validator: (v) => (v == null || v.trim().length < 5) ? 'آدرس باید حداقل ۵ کاراکتر باشد' : null),
-              const SizedBox(height: 12),
-              _SheetField(controller: _phoneCtrl, label: 'شماره تماس (اختیاری)', icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
-              const SizedBox(height: 12),
-              _SheetField(controller: _descCtrl, label: 'توضیحات', icon: Icons.description_outlined, maxLines: 3),
-              const SizedBox(height: 12),
-              // Category
-              Row(
-                children: [
-                  _CatChip(label: 'مردانه', icon: Icons.man_outlined, selected: _category == SalonCategory.male, onTap: () => setState(() => _category = SalonCategory.male)),
-                  const SizedBox(width: 8),
-                  _CatChip(label: 'زنانه', icon: Icons.woman_outlined, selected: _category == SalonCategory.female, onTap: () => setState(() => _category = SalonCategory.female)),
-                  const SizedBox(width: 8),
-                  _CatChip(label: 'یونیسکس', icon: Icons.people_outline, selected: _category == SalonCategory.unisex, onTap: () => setState(() => _category = SalonCategory.unisex)),
-                ],
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _save,
-                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: const Text('ذخیره', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 15)),
-                ),
-              ),
-            ],
+          const SizedBox(height: 32),
+          OutlinedButton.icon(
+            onPressed: () async {
+              await StorageService.clear();
+              Get.offAllNamed('/splash');
+            },
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: _kDanger),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            icon: const Icon(Icons.logout, color: _kDanger),
+            label: const Text('خروج از حساب', style: TextStyle(fontFamily: 'Vazirmatn', color: _kDanger)),
           ),
-        ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -1410,28 +1307,13 @@ class _AptCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (apt.status == AppointmentStatus.pending)
-                  _AptAction(
-                    label: 'تأیید',
-                    color: _kSuccess,
-                    icon: Icons.check_circle_outline,
-                    onTap: () => ctrl.confirmAppointment(apt.id),
-                  ),
+                  _AptAction(label: 'تأیید', color: _kSuccess, icon: Icons.check_circle_outline, onTap: () => ctrl.confirmAppointment(apt.id)),
                 if (apt.status == AppointmentStatus.confirmed) ...[
-                  _AptAction(
-                    label: 'انجام شد',
-                    color: _kPrimary,
-                    icon: Icons.done_all,
-                    onTap: () => ctrl.completeAppointment(apt.id),
-                  ),
+                  _AptAction(label: 'انجام شد', color: _kPrimary, icon: Icons.done_all, onTap: () => ctrl.completeAppointment(apt.id)),
                   const SizedBox(width: 8),
                 ],
                 const SizedBox(width: 8),
-                _AptAction(
-                  label: 'لغو',
-                  color: _kDanger,
-                  icon: Icons.cancel_outlined,
-                  onTap: () => ctrl.cancelAppointmentByOwner(apt.id),
-                ),
+                _AptAction(label: 'لغو', color: _kDanger, icon: Icons.cancel_outlined, onTap: () => ctrl.cancelAppointmentByOwner(apt.id)),
               ],
             ),
           ],
@@ -1679,7 +1561,7 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       child: Row(
         children: [
           Icon(icon, color: _kPrimary, size: 20),
@@ -1688,6 +1570,174 @@ class _InfoRow extends StatelessWidget {
           const Spacer(),
           Text(value, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+}
+
+class _WorkingDayRow extends StatelessWidget {
+  final String dayName;
+  final bool isOff;
+  final String start;
+  final String end;
+  final bool isLast;
+  final ValueChanged<bool> onToggle;
+  final void Function(bool isStart) onTimeTap;
+
+  const _WorkingDayRow({
+    required this.dayName,
+    required this.isOff,
+    required this.start,
+    required this.end,
+    required this.isLast,
+    required this.onToggle,
+    required this.onTimeTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 52,
+                child: Text(
+                  dayName,
+                  style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: isOff ? Colors.grey : Colors.black87),
+                ),
+              ),
+              Switch(value: !isOff, onChanged: onToggle, activeColor: _kSuccess, materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              const Spacer(),
+              if (!isOff) ...[
+                GestureDetector(onTap: () => onTimeTap(true), child: _TimeChip(time: start)),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6),
+                  child: Text('تا', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
+                ),
+                GestureDetector(onTap: () => onTimeTap(false), child: _TimeChip(time: end)),
+              ] else
+                const Text('تعطیل', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+        ),
+        if (!isLast) const Divider(height: 1, indent: 16, endIndent: 16),
+      ],
+    );
+  }
+}
+
+class _TimeChip extends StatelessWidget {
+  final String time;
+  const _TimeChip({required this.time});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: _kPrimary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _kPrimary.withOpacity(0.2)),
+      ),
+      child: Text(
+        PersianUtils.toPersianDigits(time),
+        style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: _kPrimary),
+      ),
+    );
+  }
+}
+
+class _EditSalonSheet extends StatefulWidget {
+  final SalonModel salon;
+  const _EditSalonSheet({required this.salon});
+  @override
+  State<_EditSalonSheet> createState() => _EditSalonSheetState();
+}
+
+class _EditSalonSheetState extends State<_EditSalonSheet> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _addressCtrl;
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _phoneCtrl;
+  late SalonCategory _category;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.salon.name);
+    _addressCtrl = TextEditingController(text: widget.salon.address);
+    _descCtrl = TextEditingController(text: widget.salon.description);
+    _phoneCtrl = TextEditingController(text: widget.salon.phone ?? '');
+    _category = widget.salon.category == SalonCategory.unisex ? SalonCategory.male : widget.salon.category;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose(); _addressCtrl.dispose(); _descCtrl.dispose(); _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!_formKey.currentState!.validate()) return;
+    OwnerController.to.updateSalon(widget.salon.copyWith(
+      name: _nameCtrl.text.trim(),
+      address: _addressCtrl.text.trim(),
+      description: _descCtrl.text.trim(),
+      phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+      category: _category,
+    ));
+    Get.back();
+    Get.snackbar('ذخیره شد', 'اطلاعات سالن به‌روز شد', backgroundColor: _kSuccess, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottom),
+      decoration: const BoxDecoration(color: _kSurface, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 16),
+              const Text('ویرایش اطلاعات سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: _kPrimary)),
+              const SizedBox(height: 16),
+              _SheetField(controller: _nameCtrl, label: 'نام سالن', icon: Icons.store_outlined, validator: (v) => (v == null || v.trim().length < 2) ? 'نام باید حداقل ۲ کاراکتر باشد' : null),
+              const SizedBox(height: 12),
+              _SheetField(controller: _addressCtrl, label: 'آدرس', icon: Icons.location_on_outlined, validator: (v) => (v == null || v.trim().length < 5) ? 'آدرس باید حداقل ۵ کاراکتر باشد' : null),
+              const SizedBox(height: 12),
+              _SheetField(controller: _phoneCtrl, label: 'شماره تماس (اختیاری)', icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+              const SizedBox(height: 12),
+              _SheetField(controller: _descCtrl, label: 'توضیحات', icon: Icons.description_outlined, maxLines: 3),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _CatChip(label: 'مردانه', icon: Icons.man_outlined, selected: _category == SalonCategory.male, onTap: () => setState(() => _category = SalonCategory.male)),
+                  const SizedBox(width: 8),
+                  _CatChip(label: 'زنانه', icon: Icons.woman_outlined, selected: _category == SalonCategory.female, onTap: () => setState(() => _category = SalonCategory.female)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _save,
+                  style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: const Text('ذخیره', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 15)),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

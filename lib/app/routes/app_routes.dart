@@ -16,4 +16,11 @@ abstract class Routes {
   static const ownerPanel = '/owner/panel';
   static const roleSelection = '/auth/role-selection';
   static const barberRegister = '/owner/register';
+  static const customerLogin = '/auth/customer-login';
+  static const customerRegister = '/auth/customer-register';
+  static const stylistLogin = '/auth/stylist-login';
+  static const stylistRegister = '/auth/stylist-register';
+  static const phoneOtp = '/auth/phone-otp';
+  static const forgotPassword = '/auth/forgot-password';
+  static const pendingApproval = '/auth/pending-approval';
 }

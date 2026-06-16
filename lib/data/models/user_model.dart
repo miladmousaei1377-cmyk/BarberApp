@@ -7,6 +7,9 @@ class UserModel {
   final String? avatarUrl;
   final UserRole role;
   final DateTime createdAt;
+  final String? email;
+  final String? password;
+  final String? stylistStatus; // 'pending', 'approved'
 
   const UserModel({
     required this.id,
@@ -15,6 +18,9 @@ class UserModel {
     this.avatarUrl,
     this.role = UserRole.customer,
     required this.createdAt,
+    this.email,
+    this.password,
+    this.stylistStatus,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -27,6 +33,9 @@ class UserModel {
           orElse: () => UserRole.customer,
         ),
         createdAt: DateTime.parse(json['created_at']),
+        email: json['email'],
+        password: json['password'],
+        stylistStatus: json['stylist_status'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -36,12 +45,18 @@ class UserModel {
         'avatar_url': avatarUrl,
         'role': role.name,
         'created_at': createdAt.toIso8601String(),
+        'email': email,
+        'password': password,
+        'stylist_status': stylistStatus,
       };
 
   UserModel copyWith({
     String? fullName,
     String? avatarUrl,
     UserRole? role,
+    String? email,
+    String? password,
+    String? stylistStatus,
   }) =>
       UserModel(
         id: id,
@@ -50,5 +65,8 @@ class UserModel {
         avatarUrl: avatarUrl ?? this.avatarUrl,
         role: role ?? this.role,
         createdAt: createdAt,
+        email: email ?? this.email,
+        password: password ?? this.password,
+        stylistStatus: stylistStatus ?? this.stylistStatus,
       );
 }

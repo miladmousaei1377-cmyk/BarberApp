@@ -213,20 +213,8 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
                   child: Row(
                     children: [
                       if (_currentPage < _pages.length - 1) ...[
-                        TextButton(
-                          onPressed: () => Get.offAllNamed(Routes.phone),
-                          child: const Text(
-                            'رد شدن',
-                            style: TextStyle(
-                              fontFamily: 'Vazirmatn',
-                              color: Colors.white54,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
                         ElevatedButton(
-                          onPressed: () => _pageController.previousPage(
+                          onPressed: () => _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
                           ),
@@ -242,10 +230,22 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
                             style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w600),
                           ),
                         ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: () => Get.offAllNamed(Routes.roleSelection),
+                          child: const Text(
+                            'رد شدن',
+                            style: TextStyle(
+                              fontFamily: 'Vazirmatn',
+                              color: Colors.white54,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                       ] else
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => Get.offAllNamed(Routes.phone),
+                            onPressed: () => Get.offAllNamed(Routes.roleSelection),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.secondary,
                               shape: RoundedRectangleBorder(

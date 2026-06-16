@@ -5,6 +5,13 @@ import '../../presentation/screens/auth/phone_screen.dart';
 import '../../presentation/screens/auth/otp_screen.dart';
 import '../../presentation/screens/auth/profile_setup_screen.dart';
 import '../../presentation/screens/auth/role_selection_screen.dart';
+import '../../presentation/screens/auth/customer_login_screen.dart';
+import '../../presentation/screens/auth/customer_register_screen.dart';
+import '../../presentation/screens/auth/stylist_login_screen.dart';
+import '../../presentation/screens/auth/stylist_register_screen.dart';
+import '../../presentation/screens/auth/phone_otp_screen.dart';
+import '../../presentation/screens/auth/forgot_password_screen.dart';
+import '../../presentation/screens/auth/pending_approval_screen.dart';
 import '../../presentation/screens/home/main_screen.dart';
 import '../../presentation/screens/salon/salon_list_screen.dart';
 import '../../presentation/screens/salon/salon_detail_screen.dart';
@@ -27,6 +34,13 @@ class AppPages {
     GetPage(name: Routes.otp, page: () => const OtpScreen()),
     GetPage(name: Routes.profileSetup, page: () => const ProfileSetupScreen()),
     GetPage(name: Routes.roleSelection, page: () => const RoleSelectionScreen()),
+    GetPage(name: Routes.customerLogin, page: () => const CustomerLoginScreen()),
+    GetPage(name: Routes.customerRegister, page: () => const CustomerRegisterScreen()),
+    GetPage(name: Routes.stylistLogin, page: () => const StylistLoginScreen()),
+    GetPage(name: Routes.stylistRegister, page: () => const StylistRegisterScreen()),
+    GetPage(name: Routes.phoneOtp, page: () => const PhoneOtpScreen()),
+    GetPage(name: Routes.forgotPassword, page: () => const ForgotPasswordScreen()),
+    GetPage(name: Routes.pendingApproval, page: () => const PendingApprovalScreen()),
     GetPage(name: Routes.main, page: () => const MainScreen()),
     GetPage(name: Routes.salonList, page: () => const SalonListScreen()),
     GetPage(name: Routes.salonDetail, page: () => const SalonDetailScreen()),

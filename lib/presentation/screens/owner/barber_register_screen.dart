@@ -84,14 +84,45 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
     OwnerController.to.registerSalon(salon);
     setState(() => _isLoading = false);
 
-    Get.back();
-    Get.snackbar(
-      'موفق',
-      'سالن "${salon.name}" با موفقیت ثبت شد',
-      backgroundColor: const Color(0xFF28A745),
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
+    if (!mounted) return;
+    final addServices = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green.shade600, size: 28),
+              const SizedBox(width: 10),
+              const Text('سالن ثبت شد!', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 18)),
+            ],
+          ),
+          content: const Text(
+            'آیا می‌خواهید الان خدمات سالن خود را اضافه کنید؟',
+            style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('بعداً', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.add_circle_outline, size: 18),
+              label: const Text('افزودن خدمات', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
     );
+    Get.back(result: addServices == true ? 'addServices' : null);
   }
 
   @override
