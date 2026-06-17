@@ -68,7 +68,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 child: _RoleCard(
                   icon: Icons.content_cut,
                   title: 'آرایشگر',
-                  description: 'مدیریت سالن و نوبت‌ها',
+                  description: 'مدیریت آرایشگاه و نوبت‌ها',
                   gradientColors: [AppColors.secondary, const Color(0xFFB03040)],
                   onTap: () => Get.toNamed(Routes.stylistLogin),
                 ),

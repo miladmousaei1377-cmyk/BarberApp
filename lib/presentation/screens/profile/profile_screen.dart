@@ -38,8 +38,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await StorageService.clear();
-              Get.offAllNamed(Routes.phone);
+              await StorageService.logout();
+              Get.offAllNamed(Routes.roleSelection);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('خروج', style: TextStyle(fontFamily: 'Vazirmatn')),

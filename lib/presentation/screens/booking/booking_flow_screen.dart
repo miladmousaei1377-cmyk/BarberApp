@@ -104,6 +104,8 @@ class _BookingFlowScreenState extends State<BookingFlowScreen> {
     final appointment = AppointmentModel(
       id: 'apt_${DateTime.now().millisecondsSinceEpoch}',
       userId: user.id,
+      userName: user.fullName,
+      userPhone: user.phone,
       salonId: _salon.id,
       salonName: _salon.name,
       salonAddress: _salon.address,

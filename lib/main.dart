@@ -5,6 +5,7 @@ import 'app/routes/app_pages.dart';
 import 'app/theme/app_theme.dart';
 import 'core/storage/storage_service.dart';
 import 'data/mock/mock_data.dart';
+import 'data/models/user_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,12 @@ void main() async {
   );
 
   MockData.init();
+
+  // Restore registered user so they can log in again after app restart.
+  final storedUser = StorageService.getUser();
+  if (storedUser != null && !MockData.users.any((u) => u.id == storedUser.id)) {
+    MockData.users.add(storedUser);
+  }
 
   runApp(const BarberBookApp());
 }

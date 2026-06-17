@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../data/models/salon_model.dart';
 import '../data/models/service_model.dart';
+import '../data/models/stylist_model.dart';
 import '../data/models/appointment_model.dart';
 import '../data/mock/mock_data.dart';
 import '../core/storage/storage_service.dart';
@@ -59,6 +60,17 @@ class OwnerController extends GetxController {
     salon.value = s;
     services.clear();
     appointments.clear();
+    // Auto-add owner as a stylist so they appear in customer-facing stylist list
+    final user = StorageService.getUser();
+    if (user != null) {
+      MockData.stylists.add(StylistModel(
+        id: 'st_${s.id}',
+        salonId: s.id,
+        name: user.fullName,
+        specialty: 'آرایشگر',
+        rating: 5.0,
+      ));
+    }
   }
 
   void updateSalon(SalonModel updated) {

@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../data/mock/mock_data.dart';
+import '../../../data/models/user_model.dart';
 
 class PhoneOtpScreen extends StatefulWidget {
   const PhoneOtpScreen({super.key});
@@ -74,31 +76,125 @@ class _PhoneOtpScreenState extends State<PhoneOtpScreen> {
     final code = _ctls.map((c) => c.text).join();
     if (code == '1234') {
       setState(() => _verified = true);
-      Get.snackbar(
-        'موفق',
-        'کد تأیید صحیح بود',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (_purpose == 'forgot') {
-          Get.offAllNamed(Routes.roleSelection);
-        } else {
-          Get.back(result: true);
-        }
-      });
+      if (_purpose == 'forgot') {
+        _handleForgotVerified();
+      } else {
+        Get.snackbar('موفق', 'کد تأیید صحیح بود', backgroundColor: Colors.green, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+        Future.delayed(const Duration(milliseconds: 400), () => Get.back(result: true));
+      }
     } else {
+      Get.snackbar('خطا', 'کد وارد شده اشتباه است', backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+      for (final c in _ctls) c.clear();
+      setState(() => _verified = false);
+      _foci[0].requestFocus();
+    }
+  }
+
+  void _handleForgotVerified() {
+    final registered = MockData.users.any((u) => u.phone == _phone);
+    if (!registered) {
+      setState(() => _verified = false);
       Get.snackbar(
-        'خطا',
-        'کد وارد شده اشتباه است',
-        backgroundColor: Colors.red,
+        'شماره ثبت نشده',
+        'شماره موبایل ثبت نشده است. لطفاً ثبت‌نام کنید.',
+        backgroundColor: Colors.orange,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 4),
       );
       for (final c in _ctls) c.clear();
       _foci[0].requestFocus();
+      return;
     }
+    _showNewPasswordDialog();
+  }
+
+  void _showNewPasswordDialog() {
+    final newPassCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool obscure1 = true;
+    bool obscure2 = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setLocal) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('رمز عبور جدید', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: newPassCtrl,
+                    obscureText: obscure1,
+                    style: const TextStyle(fontFamily: 'Vazirmatn'),
+                    decoration: InputDecoration(
+                      labelText: 'رمز عبور جدید',
+                      labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      suffixIcon: IconButton(
+                        icon: Icon(obscure1 ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                        onPressed: () => setLocal(() => obscure1 = !obscure1),
+                      ),
+                    ),
+                    validator: (v) => (v == null || v.length < 6) ? 'حداقل ۶ کاراکتر' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: confirmCtrl,
+                    obscureText: obscure2,
+                    style: const TextStyle(fontFamily: 'Vazirmatn'),
+                    decoration: InputDecoration(
+                      labelText: 'تکرار رمز عبور',
+                      labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      suffixIcon: IconButton(
+                        icon: Icon(obscure2 ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                        onPressed: () => setLocal(() => obscure2 = !obscure2),
+                      ),
+                    ),
+                    validator: (v) => v != newPassCtrl.text ? 'رمزها یکسان نیستند' : null,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  if (!formKey.currentState!.validate()) return;
+                  // Update password in MockData
+                  final idx = MockData.users.indexWhere((u) => u.phone == _phone);
+                  if (idx != -1) {
+                    final user = MockData.users[idx];
+                    MockData.users[idx] = UserModel(
+                      id: user.id,
+                      fullName: user.fullName,
+                      phone: user.phone,
+                      email: user.email,
+                      password: newPassCtrl.text,
+                      role: user.role,
+                      stylistStatus: user.stylistStatus,
+                      createdAt: user.createdAt,
+                    );
+                  }
+                  Navigator.pop(ctx);
+                  Get.snackbar('موفق', 'رمز عبور با موفقیت تغییر یافت', backgroundColor: Colors.green, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+                  Future.delayed(const Duration(milliseconds: 600), () => Get.offAllNamed(Routes.roleSelection));
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
+                child: const Text('ذخیره', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String get _timerText {

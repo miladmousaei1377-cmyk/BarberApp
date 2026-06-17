@@ -9,6 +9,7 @@ import '../../../data/models/salon_model.dart';
 import '../../../data/models/service_model.dart';
 import '../../../data/models/stylist_model.dart';
 import '../../../data/models/review_model.dart';
+import '../../../core/storage/storage_service.dart';
 import '../../widgets/star_rating.dart';
 import '../../widgets/service_tile.dart';
 
@@ -186,7 +187,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
           children: [
             _ServicesTab(services: _services),
             _StylistsTab(stylists: _stylists),
-            _ReviewsTab(reviews: _reviews),
+            _ReviewsTab(salonId: _salon.id, reviews: _reviews),
             _InfoTab(salon: _salon),
           ],
         ),
@@ -332,98 +333,193 @@ class _StylistsTab extends StatelessWidget {
   }
 }
 
-class _ReviewsTab extends StatelessWidget {
+class _ReviewsTab extends StatefulWidget {
+  final String salonId;
   final List<ReviewModel> reviews;
 
-  const _ReviewsTab({required this.reviews});
+  const _ReviewsTab({required this.salonId, required this.reviews});
+
+  @override
+  State<_ReviewsTab> createState() => _ReviewsTabState();
+}
+
+class _ReviewsTabState extends State<_ReviewsTab> {
+  late List<ReviewModel> _reviews;
+  final _commentCtrl = TextEditingController();
+  int _selectedRating = 5;
+  bool _showForm = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _reviews = List.from(widget.reviews);
+  }
+
+  @override
+  void dispose() {
+    _commentCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submitReview() {
+    if (_commentCtrl.text.trim().isEmpty) return;
+    final user = StorageService.getUser();
+    final review = ReviewModel(
+      id: 'rv_${DateTime.now().millisecondsSinceEpoch}',
+      userId: user?.id ?? 'guest',
+      userName: user?.fullName ?? 'کاربر مهمان',
+      salonId: widget.salonId,
+      rating: _selectedRating,
+      comment: _commentCtrl.text.trim(),
+      createdAt: DateTime.now(),
+    );
+    MockData.reviews.add(review);
+    setState(() {
+      _reviews = [review, ..._reviews];
+      _commentCtrl.clear();
+      _selectedRating = 5;
+      _showForm = false;
+    });
+    Get.snackbar('ثبت شد', 'نظر شما با موفقیت ثبت شد', backgroundColor: AppColors.success, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+  }
+
+  Widget _buildReviewCard(ReviewModel r) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: AppColors.secondary.withOpacity(0.1), shape: BoxShape.circle),
+                child: Center(
+                  child: Text(
+                    r.userName.characters.first,
+                    style: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: AppColors.secondary),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(r.userName, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                    Text(PersianUtils.getTimeAgo(r.createdAt), style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 11, color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+              StarRating(rating: r.rating.toDouble(), showCount: false, size: 14),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(r.comment, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textPrimary, height: 1.5)),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (reviews.isEmpty) {
-      return const Center(
-        child: Text('هنوز نظری ثبت نشده', style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary)),
-      );
-    }
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: reviews.length,
-      itemBuilder: (_, i) {
-        final r = reviews[i];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2)),
-            ],
+      children: [
+        // Review submission form
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 300),
+          crossFadeState: _showForm ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          firstChild: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => setState(() => _showForm = true),
+              icon: const Icon(Icons.rate_review_outlined),
+              label: const Text('ثبت نظر', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.secondary,
+                side: const BorderSide(color: AppColors.secondary),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        r.userName.characters.first,
-                        style: const TextStyle(
-                          fontFamily: 'Vazirmatn',
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.secondary,
-                        ),
+          secondChild: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('امتیاز شما:', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Row(
+                  children: List.generate(5, (i) => GestureDetector(
+                    onTap: () => setState(() => _selectedRating = i + 1),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(
+                        i < _selectedRating ? Icons.star_rounded : Icons.star_border_rounded,
+                        color: Colors.amber,
+                        size: 32,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          r.userName,
-                          style: const TextStyle(
-                            fontFamily: 'Vazirmatn',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          PersianUtils.getTimeAgo(r.createdAt),
-                          style: const TextStyle(
-                            fontFamily: 'Vazirmatn',
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  StarRating(rating: r.rating.toDouble(), showCount: false, size: 14),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                r.comment,
-                style: const TextStyle(
-                  fontFamily: 'Vazirmatn',
-                  fontSize: 13,
-                  color: AppColors.textPrimary,
-                  height: 1.5,
+                  )),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _commentCtrl,
+                  maxLines: 3,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'نظر خود را بنویسید...',
+                    hintStyle: const TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.divider)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.secondary)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _submitReview,
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                        child: const Text('ثبت نظر', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton(
+                      onPressed: () => setState(() { _showForm = false; _commentCtrl.clear(); }),
+                      style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                      child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn')),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        );
-      },
+        ),
+        const SizedBox(height: 16),
+        if (_reviews.isEmpty)
+          const Center(child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text('هنوز نظری ثبت نشده', style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary)),
+          ))
+        else
+          ..._reviews.map(_buildReviewCard),
+      ],
     );
   }
 }

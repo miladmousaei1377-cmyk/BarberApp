@@ -3,6 +3,8 @@ enum AppointmentStatus { pending, confirmed, cancelled, done }
 class AppointmentModel {
   final String id;
   final String userId;
+  final String? userName;
+  final String? userPhone;
   final String salonId;
   final String salonName;
   final String salonAddress;
@@ -21,6 +23,8 @@ class AppointmentModel {
   const AppointmentModel({
     required this.id,
     required this.userId,
+    this.userName,
+    this.userPhone,
     required this.salonId,
     required this.salonName,
     required this.salonAddress,
@@ -66,6 +70,8 @@ class AppointmentModel {
   AppointmentModel copyWith({AppointmentStatus? status}) => AppointmentModel(
         id: id,
         userId: userId,
+        userName: userName,
+        userPhone: userPhone,
         salonId: salonId,
         salonName: salonName,
         salonAddress: salonAddress,
@@ -82,3 +88,5 @@ class AppointmentModel {
         createdAt: createdAt,
       );
 }
+
+

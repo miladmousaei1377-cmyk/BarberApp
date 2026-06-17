@@ -80,7 +80,7 @@ class _StylistLoginScreenState extends State<StylistLoginScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'به پنل مدیریت سالن خوش آمدید',
+                  'به پنل مدیریت آرایشگاه خوش آمدید',
                   style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.white60),
                 ),
                 const SizedBox(height: 40),

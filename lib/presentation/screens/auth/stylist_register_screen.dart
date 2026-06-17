@@ -157,21 +157,21 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                _SectionLabel(label: 'اطلاعات سالن'),
+                _SectionLabel(label: 'اطلاعات آرایشگاه'),
                 const SizedBox(height: 14),
                 _AuthField(
                   controller: _salonNameCtrl,
-                  label: 'نام سالن',
+                  label: 'نام آرایشگاه',
                   icon: Icons.store_outlined,
                   validator: (v) {
-                    if (v == null || v.trim().length < 2) return 'نام سالن باید حداقل ۲ کاراکتر باشد';
+                    if (v == null || v.trim().length < 2) return 'نام آرایشگاه باید حداقل ۲ کاراکتر باشد';
                     return null;
                   },
                 ),
                 const SizedBox(height: 14),
                 _AuthField(
                   controller: _salonAddressCtrl,
-                  label: 'آدرس سالن',
+                  label: 'آدرس آرایشگاه',
                   icon: Icons.location_on_outlined,
                   validator: (v) {
                     if (v == null || v.trim().length < 5) return 'آدرس باید حداقل ۵ کاراکتر باشد';

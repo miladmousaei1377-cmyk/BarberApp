@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/routes/app_pages.dart';
+import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/utils/persian_utils.dart';
@@ -77,7 +78,7 @@ class _BarberPanelScreenState extends State<BarberPanelScreen> {
           NavigationDestination(
             icon: Icon(Icons.store_outlined),
             selectedIcon: Icon(Icons.store, color: _kPrimary),
-            label: 'سالن',
+            label: 'آرایشگاه',
           ),
           NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),
@@ -212,7 +213,7 @@ class _DashboardTab extends StatelessWidget {
                           const Icon(Icons.store_outlined, size: 52, color: _kPrimary),
                           const SizedBox(height: 12),
                           const Text(
-                            'هنوز سالنی ثبت نکرده‌اید',
+                            'هنوز آرایشگاهی ثبت نکرده‌اید',
                             style: TextStyle(
                               fontFamily: 'Vazirmatn',
                               fontSize: 16,
@@ -222,7 +223,7 @@ class _DashboardTab extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'برای دریافت نوبت، ابتدا سالن خود را ثبت کنید',
+                            'برای دریافت نوبت، ابتدا آرایشگاه خود را ثبت کنید',
                             textAlign: TextAlign.center,
                             style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.grey),
                           ),
@@ -235,7 +236,7 @@ class _DashboardTab extends StatelessWidget {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                             icon: const Icon(Icons.add_business),
-                            label: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                            label: const Text('ثبت آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
@@ -501,7 +502,7 @@ class _SalonManagementTabState extends State<_SalonManagementTab> with SingleTic
     final ctrl = OwnerController.to;
     final salon = ctrl.salon.value;
     if (salon == null) {
-      Get.snackbar('توجه', 'ابتدا سالن خود را ثبت کنید', backgroundColor: _kWarning, colorText: Colors.black);
+      Get.snackbar('توجه', 'ابتدا آرایشگاه خود را ثبت کنید', backgroundColor: _kWarning, colorText: Colors.black);
       return;
     }
     showModalBottomSheet(
@@ -521,7 +522,7 @@ class _SalonManagementTabState extends State<_SalonManagementTab> with SingleTic
         automaticallyImplyLeading: false,
         backgroundColor: _kPrimary,
         foregroundColor: Colors.white,
-        title: const Text('سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+        title: const Text('آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
         actions: [
           if (onServicesTab)
             IconButton(
@@ -586,9 +587,9 @@ class _SalonInfoSubTab extends StatelessWidget {
             children: [
               const Icon(Icons.store_outlined, size: 72, color: Colors.grey),
               const SizedBox(height: 16),
-              const Text('سالنی ثبت نشده است', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700)),
+              const Text('آرایشگاهی ثبت نشده است', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              const Text('برای شروع، سالن خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+              const Text('برای شروع، آرایشگاه خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () async {
@@ -601,7 +602,7 @@ class _SalonInfoSubTab extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 icon: const Icon(Icons.add_business),
-                label: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                label: const Text('ثبت آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
               ),
             ],
           ),
@@ -644,7 +645,7 @@ class _SalonInfoSubTab extends StatelessWidget {
           const SizedBox(height: 16),
           _ActionTile(
             icon: Icons.edit_outlined,
-            title: 'ویرایش اطلاعات سالن',
+            title: 'ویرایش اطلاعات آرایشگاه',
             subtitle: salon.address,
             onTap: () => _showEditSalonSheet(context, salon),
           ),
@@ -712,7 +713,7 @@ class _ServicesSubTab extends StatelessWidget {
             children: [
               const Icon(Icons.design_services_outlined, size: 64, color: Colors.grey),
               const SizedBox(height: 12),
-              const Text('ابتدا سالن خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
+              const Text('ابتدا آرایشگاه خود را ثبت کنید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
@@ -722,7 +723,7 @@ class _ServicesSubTab extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
-                child: const Text('ثبت سالن', style: TextStyle(fontFamily: 'Vazirmatn')),
+                child: const Text('ثبت آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn')),
               ),
             ],
           ),
@@ -884,7 +885,6 @@ class _ServiceSheet extends StatefulWidget {
 
 class _ServiceSheetState extends State<_ServiceSheet> {
   final _nameCtrl = TextEditingController();
-  final _priceCtrl = TextEditingController();
   final _durationCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
@@ -893,7 +893,6 @@ class _ServiceSheetState extends State<_ServiceSheet> {
     super.initState();
     if (widget.editing != null) {
       _nameCtrl.text = widget.editing!.name;
-      _priceCtrl.text = widget.editing!.price.toString();
       _durationCtrl.text = widget.editing!.durationMinutes.toString();
     }
   }
@@ -901,7 +900,6 @@ class _ServiceSheetState extends State<_ServiceSheet> {
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _priceCtrl.dispose();
     _durationCtrl.dispose();
     super.dispose();
   }
@@ -914,7 +912,7 @@ class _ServiceSheetState extends State<_ServiceSheet> {
       id: isEdit ? widget.editing!.id : 'sv_${DateTime.now().millisecondsSinceEpoch}',
       salonId: widget.salonId,
       name: _nameCtrl.text.trim(),
-      price: int.parse(_priceCtrl.text.trim()),
+      price: 0,
       durationMinutes: int.parse(_durationCtrl.text.trim()),
       category: 'general',
       isActive: isEdit ? widget.editing!.isActive : true,
@@ -963,36 +961,16 @@ class _ServiceSheetState extends State<_ServiceSheet> {
               validator: (v) => (v == null || v.trim().isEmpty) ? 'نام الزامی است' : null,
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _SheetField(
-                    controller: _priceCtrl,
-                    label: 'قیمت (تومان)',
-                    icon: Icons.attach_money,
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'الزامی';
-                      if (int.tryParse(v.trim()) == null) return 'عدد وارد کنید';
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _SheetField(
-                    controller: _durationCtrl,
-                    label: 'مدت (دقیقه)',
-                    icon: Icons.timer_outlined,
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'الزامی';
-                      if (int.tryParse(v.trim()) == null) return 'عدد وارد کنید';
-                      return null;
-                    },
-                  ),
-                ),
-              ],
+            _SheetField(
+              controller: _durationCtrl,
+              label: 'مدت زمان (دقیقه)',
+              icon: Icons.timer_outlined,
+              keyboardType: TextInputType.number,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'مدت الزامی است';
+                if (int.tryParse(v.trim()) == null) return 'عدد وارد کنید';
+                return null;
+              },
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -1293,7 +1271,22 @@ class _AptCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(apt.serviceNames.join('، '), style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600)),
+          if (apt.userName != null || apt.userPhone != null) ...[
+            Row(
+              children: [
+                const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                if (apt.userName != null)
+                  Text(apt.userName!, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: _kPrimary)),
+                if (apt.userName != null && apt.userPhone != null)
+                  const Text(' — ', style: TextStyle(color: Colors.grey)),
+                if (apt.userPhone != null)
+                  Text(apt.userPhone!, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 4),
+          ],
+          Text(apt.serviceNames.join('، '), style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary)),
           const SizedBox(height: 2),
           Text(
             PersianUtils.gregorianToJalali(apt.date),
@@ -1691,7 +1684,7 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
       category: _category,
     ));
     Get.back();
-    Get.snackbar('ذخیره شد', 'اطلاعات سالن به‌روز شد', backgroundColor: _kSuccess, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    Get.snackbar('ذخیره شد', 'اطلاعات آرایشگاه به‌روز شد', backgroundColor: _kSuccess, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
   }
 
   @override
@@ -1709,9 +1702,9 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 16),
-              const Text('ویرایش اطلاعات سالن', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: _kPrimary)),
+              const Text('ویرایش اطلاعات آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: _kPrimary)),
               const SizedBox(height: 16),
-              _SheetField(controller: _nameCtrl, label: 'نام سالن', icon: Icons.store_outlined, validator: (v) => (v == null || v.trim().length < 2) ? 'نام باید حداقل ۲ کاراکتر باشد' : null),
+              _SheetField(controller: _nameCtrl, label: 'نام آرایشگاه', icon: Icons.store_outlined, validator: (v) => (v == null || v.trim().length < 2) ? 'نام باید حداقل ۲ کاراکتر باشد' : null),
               const SizedBox(height: 12),
               _SheetField(controller: _addressCtrl, label: 'آدرس', icon: Icons.location_on_outlined, validator: (v) => (v == null || v.trim().length < 5) ? 'آدرس باید حداقل ۵ کاراکتر باشد' : null),
               const SizedBox(height: 12),

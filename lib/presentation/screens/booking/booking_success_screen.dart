@@ -87,7 +87,7 @@ class BookingSuccessScreen extends StatelessWidget {
                     children: [
                       _ConfirmRow(
                         Icons.store_outlined,
-                        'سالن',
+                        'آرایشگاه',
                         appointment.salonName,
                       ),
                       const SizedBox(height: 12),

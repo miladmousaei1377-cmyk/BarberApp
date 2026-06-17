@@ -22,6 +22,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 21, minute: 0);
   bool _isLoading = false;
+  int _imageCount = 0;
 
   @override
   void dispose() {
@@ -68,7 +69,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
       id: 'salon_${DateTime.now().millisecondsSinceEpoch}',
       name: _nameController.text.trim(),
       description: _descController.text.trim().isEmpty
-          ? 'سالن ${_nameController.text.trim()}'
+          ? 'آرایشگاه ${_nameController.text.trim()}'
           : _descController.text.trim(),
       address: _addressController.text.trim(),
       lat: 35.7448,
@@ -96,11 +97,11 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
             children: [
               Icon(Icons.check_circle, color: Colors.green.shade600, size: 28),
               const SizedBox(width: 10),
-              const Text('سالن ثبت شد!', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 18)),
+              const Text('آرایشگاه ثبت شد!', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 18)),
             ],
           ),
           content: const Text(
-            'آیا می‌خواهید الان خدمات سالن خود را اضافه کنید؟',
+            'آیا می‌خواهید الان خدمات آرایشگاه خود را اضافه کنید؟',
             style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, height: 1.5),
           ),
           actions: [
@@ -130,7 +131,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('ثبت سالن'),
+        title: const Text('ثبت آرایشگاه'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_forward_ios),
           onPressed: () => Get.back(),
@@ -148,14 +149,14 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
               textDirection: TextDirection.rtl,
               style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 15),
               decoration: InputDecoration(
-                labelText: 'نام سالن',
+                labelText: 'نام آرایشگاه',
                 labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
                 prefixIcon: const Icon(Icons.store_outlined, color: AppColors.textSecondary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               validator: (v) {
                 if (v == null || v.trim().length < 2) {
-                  return 'نام سالن باید حداقل ۲ کاراکتر باشد';
+                  return 'نام آرایشگاه باید حداقل ۲ کاراکتر باشد';
                 }
                 return null;
               },
@@ -182,7 +183,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
             const SizedBox(height: 20),
             // Category
             const Text(
-              'دسته‌بندی سالن',
+              'دسته‌بندی آرایشگاه',
               style: TextStyle(
                 fontFamily: 'Vazirmatn',
                 fontSize: 15,
@@ -307,6 +308,70 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
+            const SizedBox(height: 20),
+            // Images section
+            const Text(
+              'تصاویر آرایشگاه',
+              style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 90,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  ...List.generate(_imageCount, (i) => Container(
+                    width: 90,
+                    height: 90,
+                    margin: const EdgeInsets.only(left: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+                    ),
+                    child: Stack(
+                      children: [
+                        const Center(child: Icon(Icons.image_outlined, color: AppColors.secondary, size: 32)),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => setState(() => _imageCount--),
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 14),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                  if (_imageCount < 5)
+                    GestureDetector(
+                      onTap: () => setState(() => _imageCount++),
+                      child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.divider, style: BorderStyle.solid),
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_photo_alternate_outlined, color: AppColors.textSecondary, size: 28),
+                            SizedBox(height: 4),
+                            Text('افزودن', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 11, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -323,7 +388,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
                     : const Text(
-                        'ثبت سالن',
+                        'ثبت آرایشگاه',
                         style: TextStyle(
                           fontFamily: 'Vazirmatn',
                           fontSize: 16,
