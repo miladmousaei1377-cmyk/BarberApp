@@ -6,7 +6,6 @@ import '../../../core/storage/storage_service.dart';
 import '../../../core/utils/persian_utils.dart';
 import '../../../data/mock/mock_data.dart';
 import '../../../data/models/appointment_model.dart';
-import '../../../data/models/review_model.dart';
 import '../../../data/models/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -592,83 +591,6 @@ class _AppointmentCard extends StatelessWidget {
             ),
             child: Text(_statusLabel, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: _statusColor, fontWeight: FontWeight.w600)),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MyReviewsPage extends StatelessWidget {
-  final String userId;
-
-  const _MyReviewsPage({required this.userId});
-
-  @override
-  Widget build(BuildContext context) {
-    final reviews = MockData.reviews.where((r) => r.userId == userId).toList();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('نظرات من'),
-        leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Get.back()),
-      ),
-      body: reviews.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.rate_review_outlined, size: 72, color: AppColors.textSecondary.withOpacity(0.4)),
-                  const SizedBox(height: 16),
-                  const Text('هنوز نظری ثبت نکرده‌اید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, color: AppColors.textSecondary)),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: reviews.length,
-              itemBuilder: (_, i) => _ReviewCard(review: reviews[i]),
-            ),
-    );
-  }
-}
-
-class _ReviewCard extends StatelessWidget {
-  final ReviewModel review;
-
-  const _ReviewCard({required this.review});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  PersianUtils.getTimeAgo(review.createdAt),
-                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary),
-                ),
-              ),
-              Row(
-                children: List.generate(5, (i) => Icon(
-                  i < review.rating ? Icons.star_rounded : Icons.star_border_rounded,
-                  color: Colors.amber,
-                  size: 16,
-                )),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(review.comment, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textPrimary, height: 1.5)),
         ],
       ),
     );
