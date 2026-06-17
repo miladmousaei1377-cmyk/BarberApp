@@ -33,6 +33,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   bool _locationEnabled = false;
   double _lat = 35.7448;
   double _lng = 51.4100;
+  final _previewMapController = MapController();
 
 
   @override
@@ -41,6 +42,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
     _phoneController.dispose();
     _addressController.dispose();
     _descController.dispose();
+    _previewMapController.dispose();
     super.dispose();
   }
 
@@ -64,6 +66,9 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
         _lat = result.latitude;
         _lng = result.longitude;
         _locationEnabled = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try { _previewMapController.move(LatLng(_lat, _lng), 15); } catch (_) {}
       });
     }
   }
@@ -394,6 +399,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                 child: SizedBox(
                   height: 180,
                   child: FlutterMap(
+                    mapController: _previewMapController,
                     options: MapOptions(
                       initialCenter: LatLng(_lat, _lng),
                       initialZoom: 15,
@@ -401,7 +407,8 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        subdomains: const ['a', 'b', 'c'],
                         userAgentPackageName: 'com.barberbook.app',
                       ),
                       MarkerLayer(

@@ -180,6 +180,30 @@ class OwnerController extends GetxController {
         .length;
   }
 
+  int get weekAppointmentCount {
+    final now = DateTime.now();
+    final weekStart = now.subtract(const Duration(days: 6));
+    return appointments
+        .where((a) =>
+            !a.date.isBefore(DateTime(weekStart.year, weekStart.month, weekStart.day)) &&
+            a.status != AppointmentStatus.cancelled)
+        .length;
+  }
+
+  List<int> get last7DaysAppointmentCount {
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = now.subtract(Duration(days: 6 - i));
+      return appointments
+          .where((a) =>
+              a.date.year == day.year &&
+              a.date.month == day.month &&
+              a.date.day == day.day &&
+              a.status != AppointmentStatus.cancelled)
+          .length;
+    });
+  }
+
   double get cancelRate {
     if (appointments.isEmpty) return 0.0;
     final cancelled = appointments.where((a) => a.status == AppointmentStatus.cancelled).length;
@@ -198,5 +222,11 @@ class OwnerController extends GetxController {
               a.status == AppointmentStatus.done)
           .fold(0, (s, a) => s + a.totalPrice);
     });
+  }
+
+  void deleteAppointment(String id) {
+    MockData.appointments.removeWhere((a) => a.id == id);
+    appointments.removeWhere((a) => a.id == id);
+    DataService.saveAll();
   }
 }

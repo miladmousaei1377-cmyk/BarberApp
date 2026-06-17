@@ -757,8 +757,9 @@ class _SalonInfoSubTab extends StatelessWidget {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.example.barberbook',
+                          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          subdomains: const ['a', 'b', 'c'],
+                          userAgentPackageName: 'com.barberbook.app',
                         ),
                         MarkerLayer(
                           markers: [
@@ -2210,6 +2211,7 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
   late List<String> _images;
   final _imagePicker = ImagePicker();
   final _formKey = GlobalKey<FormState>();
+  final _editMapController = MapController();
 
   @override
   void initState() {
@@ -2279,12 +2281,16 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
         _lng = result.longitude;
         _locationEnabled = true;
       });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try { _editMapController.move(LatLng(_lat, _lng), 15); } catch (_) {}
+      });
     }
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose(); _addressCtrl.dispose(); _descCtrl.dispose(); _phoneCtrl.dispose();
+    _editMapController.dispose();
     super.dispose();
   }
 
@@ -2413,6 +2419,39 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
               ),
               if (_locationEnabled) ...[
                 const SizedBox(height: 8),
+                if (_lat != 0.0)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      height: 160,
+                      child: FlutterMap(
+                        mapController: _editMapController,
+                        options: MapOptions(
+                          initialCenter: LatLng(_lat, _lng),
+                          initialZoom: 15,
+                          interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            subdomains: const ['a', 'b', 'c'],
+                            userAgentPackageName: 'com.barberbook.app',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(_lat, _lng),
+                                width: 36,
+                                height: 36,
+                                child: const Icon(Icons.location_pin, color: Colors.red, size: 36),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 6),
                 GestureDetector(
                   onTap: _pickLocation,
                   child: Container(
