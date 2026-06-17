@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/storage/storage_service.dart';
@@ -22,12 +24,31 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  Position? _userPosition;
 
   final _categories = [
     ('all', 'همه'),
     ('male', 'مردانه'),
     ('female', 'زنانه'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserLocation();
+  }
+
+  Future<void> _loadUserLocation() async {
+    try {
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.deniedForever || perm == LocationPermission.denied) return;
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low);
+      if (mounted) setState(() => _userPosition = pos);
+    } catch (_) {}
+  }
 
   List<SalonModel> get _filteredSalons {
     var salons = MockData.getSalonsByCategory(
@@ -42,7 +63,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return salons;
   }
 
-  List<SalonModel> get _nearbySalons => MockData.salons.take(3).toList();
+  List<SalonModel> get _nearbySalons {
+    if (_userPosition == null) return MockData.salons.take(4).toList();
+    const dist = Distance();
+    final userLoc = LatLng(_userPosition!.latitude, _userPosition!.longitude);
+    final nearby = MockData.salons.where((s) {
+      if (s.lat == 0.0 && s.lng == 0.0) return false;
+      final km = dist.as(LengthUnit.Kilometer, userLoc, LatLng(s.lat, s.lng));
+      return km <= 10.0;
+    }).toList();
+    return nearby.isEmpty ? MockData.salons.take(4).toList() : nearby;
+  }
 
   @override
   void dispose() {
@@ -69,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildHeader(user?.fullName ?? 'کاربر'),
             SliverToBoxAdapter(child: _buildSearch()),
             SliverToBoxAdapter(child: _buildCategories()),
-            SliverToBoxAdapter(child: _buildNearbySection()),
+            if (_searchQuery.isEmpty) SliverToBoxAdapter(child: _buildNearbySection()),
             SliverToBoxAdapter(child: _buildTopSalonsTitle()),
             _isLoading
                 ? SliverList(

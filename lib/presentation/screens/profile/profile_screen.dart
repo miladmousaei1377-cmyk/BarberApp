@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/storage/storage_service.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/persian_utils.dart';
 import '../../../data/mock/mock_data.dart';
 import '../../../data/models/appointment_model.dart';
@@ -17,11 +18,29 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   UserModel? _user;
+  bool _biometricEnabled = false;
+  bool _biometricAvailable = false;
 
   @override
   void initState() {
     super.initState();
     _user = StorageService.getUser();
+    _biometricEnabled = StorageService.biometricEnabled;
+    _checkBiometricAvailability();
+  }
+
+  Future<void> _checkBiometricAvailability() async {
+    final available = await BiometricService.isAvailable();
+    if (mounted) setState(() => _biometricAvailable = available);
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    if (value) {
+      final ok = await BiometricService.authenticate();
+      if (!ok) return;
+    }
+    await StorageService.setBiometricEnabled(value);
+    setState(() => _biometricEnabled = value);
   }
 
   void _logout() {
@@ -160,6 +179,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _MenuItem(Icons.notifications_outlined, 'اعلان‌ها', () => Get.to(() => const _NotificationsPage())),
             ],
           ),
+          if (_biometricAvailable) ...[
+            const SizedBox(height: 8),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2))],
+              ),
+              child: SwitchListTile(
+                secondary: const Icon(Icons.fingerprint, color: AppColors.primary, size: 22),
+                title: const Text('ورود با اثر انگشت', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: AppColors.textPrimary)),
+                subtitle: const Text('فعال‌سازی ورود بیومتریک', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary)),
+                value: _biometricEnabled,
+                activeColor: AppColors.primary,
+                onChanged: _toggleBiometric,
+              ),
+            ),
+          ],
           _MenuSection(
             title: 'رزروها',
             items: [

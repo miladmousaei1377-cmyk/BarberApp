@@ -8,6 +8,7 @@ class StorageService {
   static const _keyToken = 'auth_token';
   static const _keyUser = 'user_data';
   static const _keyOnboardingSeen = 'onboarding_seen';
+  static const _keyBiometric = 'biometric_enabled';
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -35,6 +36,12 @@ class StorageService {
 
   static Future<void> setOnboardingSeen() async {
     await _prefs.setBool(_keyOnboardingSeen, true);
+  }
+
+  static bool get biometricEnabled => _prefs.getBool(_keyBiometric) ?? false;
+
+  static Future<void> setBiometricEnabled(bool value) async {
+    await _prefs.setBool(_keyBiometric, value);
   }
 
   /// Clears only auth data — does NOT reset onboarding flag.

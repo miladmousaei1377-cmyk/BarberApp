@@ -31,6 +31,8 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
   late List<ServiceModel> _services;
   late List<StylistModel> _stylists;
   late List<ReviewModel> _reviews;
+  int _currentImageIndex = 0;
+  final _imagePageController = PageController();
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _imagePageController.dispose();
     super.dispose();
   }
 
@@ -76,7 +79,9 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
                   // Real images if available, otherwise gradient placeholder
                   if (_salon.images.isNotEmpty)
                     PageView.builder(
+                      controller: _imagePageController,
                       itemCount: _salon.images.length,
+                      onPageChanged: (i) => setState(() => _currentImageIndex = i),
                       itemBuilder: (_, i) => Image.file(
                         File(_salon.images[i]),
                         fit: BoxFit.cover,
@@ -115,6 +120,26 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
                       ),
                     ),
                   ),
+                  // Dots indicator for image slideshow
+                  if (_salon.images.length > 1)
+                    Positioned(
+                      top: 12,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(_salon.images.length, (i) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          margin: const EdgeInsets.symmetric(horizontal: 3),
+                          width: i == _currentImageIndex ? 20 : 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: i == _currentImageIndex ? AppColors.secondary : Colors.white60,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        )),
+                      ),
+                    ),
                   Positioned(
                     bottom: 16,
                     right: 16,
@@ -281,6 +306,16 @@ class _StylistsTab extends StatelessWidget {
 
   const _StylistsTab({required this.stylists});
 
+  void _showProfile(BuildContext context, StylistModel s) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _StylistProfileSheet(stylist: s),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (stylists.isEmpty) {
@@ -291,68 +326,162 @@ class _StylistsTab extends StatelessWidget {
       itemCount: stylists.length,
       itemBuilder: (_, i) {
         final s = stylists[i];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2)),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    s.name.characters.first,
-                    style: const TextStyle(
-                      fontFamily: 'Vazirmatn',
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+        return GestureDetector(
+          onTap: () => _showProfile(context, s),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      s.name.characters.first,
+                      style: const TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s.name,
-                      style: const TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.name,
+                        style: const TextStyle(
+                          fontFamily: 'Vazirmatn',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      s.specialty,
-                      style: const TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
+                      const SizedBox(height: 4),
+                      Text(
+                        s.specialty,
+                        style: const TextStyle(
+                          fontFamily: 'Vazirmatn',
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              StarRating(rating: s.rating, showCount: false, size: 14),
-            ],
+                StarRating(rating: s.rating, showCount: false, size: 14),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_left, color: AppColors.textSecondary, size: 18),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+class _StylistProfileSheet extends StatelessWidget {
+  final StylistModel stylist;
+  const _StylistProfileSheet({required this.stylist});
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.55,
+      maxChildSize: 0.85,
+      minChildSize: 0.4,
+      expand: false,
+      builder: (_, ctrl) => ListView(
+        controller: ctrl,
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        children: [
+          Center(child: Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 20), decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
+          // Avatar
+          Center(
+            child: Container(
+              width: 96, height: 96,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [AppColors.primary, AppColors.accent], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  stylist.name.characters.first,
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 38, fontWeight: FontWeight.w800, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Center(child: Text(stylist.name, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary))),
+          const SizedBox(height: 4),
+          Center(child: Text(stylist.specialty, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: AppColors.textSecondary))),
+          const SizedBox(height: 12),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                StarRating(rating: stylist.rating, size: 18),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.workspace_premium_outlined, color: AppColors.secondary, size: 22),
+                const SizedBox(width: 12),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('تخصص', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary)),
+                    const SizedBox(height: 2),
+                    Text(stylist.specialty, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  ],
+                )),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              icon: const Icon(Icons.calendar_today_outlined),
+              label: const Text('رزرو با این آرایشگر', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

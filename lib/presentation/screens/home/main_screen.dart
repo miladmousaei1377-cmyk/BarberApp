@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../data/models/user_model.dart';
@@ -19,6 +20,17 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final arg = Get.arguments;
+      if (arg is int && arg >= 0 && arg < 4) {
+        setState(() => _currentIndex = arg);
+      }
+    });
+  }
 
   static const _screens = [
     HomeScreen(),
