@@ -223,6 +223,8 @@ class _AuthField extends StatelessWidget {
       textDirection: TextDirection.rtl,
       style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.white),
       decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
         labelText: label,
         labelStyle: const TextStyle(fontFamily: 'Vazirmatn', color: Colors.white60),
         prefixIcon: Icon(icon, color: Colors.white54),

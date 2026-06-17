@@ -1222,8 +1222,8 @@ class _OwnerProfileTab extends StatelessWidget {
           const SizedBox(height: 32),
           OutlinedButton.icon(
             onPressed: () async {
-              await StorageService.clear();
-              Get.offAllNamed('/splash');
+              await StorageService.logout();
+              Get.offAllNamed(Routes.roleSelection);
             },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: _kDanger),

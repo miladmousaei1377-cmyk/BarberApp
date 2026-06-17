@@ -36,7 +36,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
     if (StorageService.isLoggedIn) {
-      Get.offAllNamed(Routes.main);
+      final user = StorageService.getUser();
+      if (user?.role.name == 'barber') {
+        Get.offAllNamed(Routes.ownerPanel);
+      } else {
+        Get.offAllNamed(Routes.main);
+      }
+    } else if (StorageService.onboardingSeen) {
+      Get.offAllNamed(Routes.roleSelection);
     } else {
       setState(() => _showOnboarding = true);
     }
@@ -232,7 +239,10 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
                         ),
                         const Spacer(),
                         TextButton(
-                          onPressed: () => Get.offAllNamed(Routes.roleSelection),
+                          onPressed: () async {
+                              await StorageService.setOnboardingSeen();
+                              Get.offAllNamed(Routes.roleSelection);
+                            },
                           child: const Text(
                             'رد شدن',
                             style: TextStyle(
@@ -245,7 +255,10 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
                       ] else
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => Get.offAllNamed(Routes.roleSelection),
+                            onPressed: () async {
+                              await StorageService.setOnboardingSeen();
+                              Get.offAllNamed(Routes.roleSelection);
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.secondary,
                               shape: RoundedRectangleBorder(

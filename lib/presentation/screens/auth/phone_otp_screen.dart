@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
@@ -37,9 +38,11 @@ class _PhoneOtpScreenState extends State<PhoneOtpScreen> {
   }
 
   void _sendOtp() {
-    // Mock: print OTP to console
     // ignore: avoid_print
     print('📱 OTP for $_phone: 1234');
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _foci[0].requestFocus();
+    });
   }
 
   void _startTimer() {
@@ -171,16 +174,23 @@ class _PhoneOtpScreenState extends State<PhoneOtpScreen> {
                       focusNode: _foci[i],
                       textAlign: TextAlign.center,
                       keyboardType: TextInputType.number,
-                      maxLength: 1,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(1),
+                      ],
                       style: const TextStyle(
                         fontFamily: 'Vazirmatn',
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.transparent,
                         border: InputBorder.none,
-                        counterText: '',
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
                       ),
                       onChanged: (v) => _onDigit(i, v),
                     ),

@@ -182,6 +182,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                   textDirection: TextDirection.rtl,
                                   style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.white),
                                   decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white.withOpacity(0.08),
                                     labelText: 'ایمیل',
                                     labelStyle: const TextStyle(fontFamily: 'Vazirmatn', color: Colors.white60),
                                     prefixIcon: const Icon(Icons.email_outlined, color: Colors.white54),
@@ -235,6 +237,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                             textDirection: TextDirection.rtl,
                             style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.white),
                             decoration: InputDecoration(
+                              filled: true,
+                              fillColor: Colors.white.withOpacity(0.08),
                               labelText: 'شماره موبایل',
                               labelStyle: const TextStyle(fontFamily: 'Vazirmatn', color: Colors.white60),
                               prefixIcon: const Icon(Icons.phone_outlined, color: Colors.white54),

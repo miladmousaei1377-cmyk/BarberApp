@@ -7,6 +7,7 @@ class StorageService {
 
   static const _keyToken = 'auth_token';
   static const _keyUser = 'user_data';
+  static const _keyOnboardingSeen = 'onboarding_seen';
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -30,7 +31,20 @@ class StorageService {
 
   static bool get isLoggedIn => getToken() != null && getUser() != null;
 
+  static bool get onboardingSeen => _prefs.getBool(_keyOnboardingSeen) ?? false;
+
+  static Future<void> setOnboardingSeen() async {
+    await _prefs.setBool(_keyOnboardingSeen, true);
+  }
+
+  /// Clears only auth data — does NOT reset onboarding flag.
+  static Future<void> logout() async {
+    await _prefs.remove(_keyToken);
+    await _prefs.remove(_keyUser);
+  }
+
   static Future<void> clear() async {
     await _prefs.clear();
   }
 }
+

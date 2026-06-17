@@ -39,7 +39,7 @@ class _StylistLoginScreenState extends State<StylistLoginScreen> {
     );
     switch (result) {
       case StylistLoginResult.success:
-        Get.offAllNamed(Routes.main);
+        Get.offAllNamed(Routes.ownerPanel);
         break;
       case StylistLoginResult.pending:
         Get.offAllNamed(Routes.pendingApproval);
@@ -232,6 +232,8 @@ class _AuthField extends StatelessWidget {
       textDirection: TextDirection.rtl,
       style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.white),
       decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.08),
         labelText: label,
         labelStyle: const TextStyle(fontFamily: 'Vazirmatn', color: Colors.white60),
         prefixIcon: Icon(icon, color: Colors.white54),

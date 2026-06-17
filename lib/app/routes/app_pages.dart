@@ -20,7 +20,7 @@ import '../../presentation/screens/booking/booking_success_screen.dart';
 import '../../presentation/screens/appointments/appointments_screen.dart';
 import '../../presentation/screens/map/map_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
-import '../../presentation/screens/owner/owner_panel_screen.dart';
+import '../../presentation/screens/owner/barber_panel_screen.dart';
 import '../../presentation/screens/owner/barber_register_screen.dart';
 
 part 'app_routes.dart';
@@ -49,7 +49,7 @@ class AppPages {
     GetPage(name: Routes.appointments, page: () => const AppointmentsScreen()),
     GetPage(name: Routes.map, page: () => const MapScreen()),
     GetPage(name: Routes.profile, page: () => const ProfileScreen()),
-    GetPage(name: Routes.ownerPanel, page: () => const OwnerPanelScreen()),
+    GetPage(name: Routes.ownerPanel, page: () => const BarberPanelScreen()),
     GetPage(name: Routes.barberRegister, page: () => const BarberRegisterScreen()),
   ];
 }
