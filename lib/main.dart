@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'app/routes/app_pages.dart';
 import 'app/theme/app_theme.dart';
 import 'core/storage/storage_service.dart';
+import 'core/storage/data_service.dart';
 import 'data/mock/mock_data.dart';
 import 'data/models/user_model.dart';
 
@@ -11,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await StorageService.init();
+  await DataService.init();
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
@@ -21,11 +23,14 @@ void main() async {
   );
 
   MockData.init();
+  MockData.onDataChanged = () => DataService.saveAll();
+  DataService.loadAll();
 
   // Restore registered user so they can log in again after app restart.
   final storedUser = StorageService.getUser();
   if (storedUser != null && !MockData.users.any((u) => u.id == storedUser.id)) {
     MockData.users.add(storedUser);
+    await DataService.saveAll();
   }
 
   runApp(const BarberBookApp());

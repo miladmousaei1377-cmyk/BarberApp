@@ -19,6 +19,7 @@ import '../../presentation/screens/booking/booking_flow_screen.dart';
 import '../../presentation/screens/booking/booking_success_screen.dart';
 import '../../presentation/screens/appointments/appointments_screen.dart';
 import '../../presentation/screens/map/map_screen.dart';
+import '../../presentation/screens/map/location_picker_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/owner/barber_panel_screen.dart';
 import '../../presentation/screens/owner/barber_register_screen.dart';
@@ -48,6 +49,7 @@ class AppPages {
     GetPage(name: Routes.bookingSuccess, page: () => const BookingSuccessScreen()),
     GetPage(name: Routes.appointments, page: () => const AppointmentsScreen()),
     GetPage(name: Routes.map, page: () => const MapScreen()),
+    GetPage(name: Routes.locationPicker, page: () => const LocationPickerScreen()),
     GetPage(name: Routes.profile, page: () => const ProfileScreen()),
     GetPage(name: Routes.ownerPanel, page: () => const BarberPanelScreen()),
     GetPage(name: Routes.barberRegister, page: () => const BarberRegisterScreen()),

@@ -15,6 +15,8 @@ class MockData {
   static List<AppointmentModel> appointments = [];
   static List<WorkingHoursModel> workingHours = [];
 
+  static void Function()? onDataChanged;
+
   static void init() {
     _initUsers();
     _initSalons();
@@ -187,6 +189,7 @@ class MockData {
 
   static AppointmentModel addAppointment(AppointmentModel appointment) {
     appointments.add(appointment);
+    onDataChanged?.call();
     return appointment;
   }
 
@@ -194,6 +197,7 @@ class MockData {
     final idx = appointments.indexWhere((a) => a.id == appointmentId);
     if (idx == -1) return false;
     appointments[idx] = appointments[idx].copyWith(status: AppointmentStatus.cancelled);
+    onDataChanged?.call();
     return true;
   }
 }

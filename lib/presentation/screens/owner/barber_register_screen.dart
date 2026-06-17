@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
+import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
 import '../../../core/storage/storage_service.dart';
@@ -31,14 +33,6 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   double _lat = 35.7448;
   double _lng = 51.4100;
 
-  static const _tehranAreas = [
-    {'name': 'ولیعصر', 'lat': 35.7448, 'lng': 51.4100},
-    {'name': 'انقلاب', 'lat': 35.7001, 'lng': 51.3877},
-    {'name': 'میدان آزادی', 'lat': 35.6996, 'lng': 51.3376},
-    {'name': 'شریعتی', 'lat': 35.7591, 'lng': 51.4339},
-    {'name': 'نیاوران', 'lat': 35.8108, 'lng': 51.4638},
-    {'name': 'تجریش', 'lat': 35.8063, 'lng': 51.4309},
-  ];
 
   @override
   void dispose() {
@@ -60,83 +54,17 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   }
 
   Future<void> _pickLocation() async {
-    await showDialog(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('انتخاب موقعیت مکانی', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 16)),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Colors.teal.shade700, Colors.teal.shade400]),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.map_outlined, color: Colors.white, size: 40),
-                        SizedBox(height: 6),
-                        Text('نقشه تهران', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.white70, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text('یک منطقه را انتخاب کنید:', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _tehranAreas.map((area) {
-                    final isSelected = _lat == area['lat'] && _lng == area['lng'];
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _lat = area['lat'] as double;
-                          _lng = area['lng'] as double;
-                        });
-                        Navigator.pop(ctx);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.secondary.withOpacity(0.15) : AppColors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isSelected ? AppColors.secondary : AppColors.divider),
-                        ),
-                        child: Text(
-                          area['name'] as String,
-                          style: TextStyle(
-                            fontFamily: 'Vazirmatn',
-                            fontSize: 13,
-                            color: isSelected ? AppColors.secondary : AppColors.textPrimary,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary)),
-            ),
-          ],
-        ),
-      ),
+    final LatLng? result = await Get.toNamed(
+      Routes.locationPicker,
+      arguments: (_locationEnabled && _lat != 35.7448) ? LatLng(_lat, _lng) : null,
     );
+    if (result != null) {
+      setState(() {
+        _lat = result.latitude;
+        _lng = result.longitude;
+        _locationEnabled = true;
+      });
+    }
   }
 
   String _formatTime(TimeOfDay t) {

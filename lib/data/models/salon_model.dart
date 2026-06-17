@@ -43,26 +43,29 @@ class SalonModel {
     String? name,
     String? description,
     String? address,
+    double? lat,
+    double? lng,
     SalonCategory? category,
     String? phone,
     bool? isActive,
     String? openTime,
     String? closeTime,
+    List<String>? images,
   }) =>
       SalonModel(
         id: id,
         name: name ?? this.name,
         description: description ?? this.description,
         address: address ?? this.address,
-        lat: lat,
-        lng: lng,
+        lat: lat ?? this.lat,
+        lng: lng ?? this.lng,
         coverImage: coverImage,
         rating: rating,
         reviewCount: reviewCount,
         isVerified: isVerified,
         category: category ?? this.category,
         ownerId: ownerId,
-        images: images,
+        images: images ?? this.images,
         phone: phone ?? this.phone,
         isActive: isActive ?? this.isActive,
         openTime: openTime ?? this.openTime,
@@ -90,6 +93,26 @@ class SalonModel {
         return 'unisex';
     }
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'address': address,
+        'lat': lat,
+        'lng': lng,
+        'cover_image': coverImage,
+        'rating': rating,
+        'review_count': reviewCount,
+        'is_verified': isVerified,
+        'category': category.name,
+        'owner_id': ownerId,
+        'images': images,
+        'phone': phone,
+        'is_active': isActive,
+        'open_time': openTime,
+        'close_time': closeTime,
+      };
 
   factory SalonModel.fromJson(Map<String, dynamic> json) => SalonModel(
         id: json['id'],

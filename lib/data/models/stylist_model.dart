@@ -15,6 +15,15 @@ class StylistModel {
     required this.rating,
   });
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'salon_id': salonId,
+        'name': name,
+        'avatar': avatar,
+        'specialty': specialty,
+        'rating': rating,
+      };
+
   factory StylistModel.fromJson(Map<String, dynamic> json) => StylistModel(
         id: json['id'],
         salonId: json['salon_id'],

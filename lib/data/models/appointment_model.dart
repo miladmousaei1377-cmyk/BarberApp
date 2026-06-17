@@ -67,6 +67,51 @@ class AppointmentModel {
             status == AppointmentStatus.confirmed);
   }
 
+  factory AppointmentModel.fromJson(Map<String, dynamic> json) => AppointmentModel(
+        id: json['id'],
+        userId: json['user_id'],
+        userName: json['user_name'],
+        userPhone: json['user_phone'],
+        salonId: json['salon_id'],
+        salonName: json['salon_name'],
+        salonAddress: json['salon_address'],
+        stylistId: json['stylist_id'],
+        stylistName: json['stylist_name'],
+        serviceIds: List<String>.from(json['service_ids'] ?? []),
+        serviceNames: List<String>.from(json['service_names'] ?? []),
+        date: DateTime.parse(json['date']),
+        startTime: json['start_time'],
+        endTime: json['end_time'],
+        status: AppointmentStatus.values.firstWhere(
+          (s) => s.name == json['status'],
+          orElse: () => AppointmentStatus.pending,
+        ),
+        totalPrice: json['total_price'],
+        notes: json['notes'],
+        createdAt: DateTime.parse(json['created_at']),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'user_id': userId,
+        'user_name': userName,
+        'user_phone': userPhone,
+        'salon_id': salonId,
+        'salon_name': salonName,
+        'salon_address': salonAddress,
+        'stylist_id': stylistId,
+        'stylist_name': stylistName,
+        'service_ids': serviceIds,
+        'service_names': serviceNames,
+        'date': date.toIso8601String(),
+        'start_time': startTime,
+        'end_time': endTime,
+        'status': status.name,
+        'total_price': totalPrice,
+        'notes': notes,
+        'created_at': createdAt.toIso8601String(),
+      };
+
   AppointmentModel copyWith({AppointmentStatus? status}) => AppointmentModel(
         id: id,
         userId: userId,

@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/utils/persian_utils.dart';
@@ -10,6 +13,7 @@ import '../../../data/models/service_model.dart';
 import '../../../data/models/stylist_model.dart';
 import '../../../data/models/review_model.dart';
 import '../../../core/storage/storage_service.dart';
+import '../../../core/storage/data_service.dart';
 import '../../widgets/star_rating.dart';
 import '../../widgets/service_tile.dart';
 
@@ -69,7 +73,27 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Container(
+                  // Real images if available, otherwise gradient placeholder
+                  if (_salon.images.isNotEmpty)
+                    PageView.builder(
+                      itemCount: _salon.images.length,
+                      itemBuilder: (_, i) => Image.file(
+                        File(_salon.images[i]),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [AppColors.primary, AppColors.accent],
+                            ),
+                          ),
+                          child: const Icon(Icons.content_cut, color: Colors.white24, size: 100),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -374,6 +398,7 @@ class _ReviewsTabState extends State<_ReviewsTab> {
       createdAt: DateTime.now(),
     );
     MockData.reviews.add(review);
+    DataService.saveAll();
     setState(() {
       _reviews = [review, ..._reviews];
       _commentCtrl.clear();
@@ -561,34 +586,60 @@ class _InfoTab extends StatelessWidget {
           content: salon.categoryLabel,
         ),
         const SizedBox(height: 12),
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: hasLocation ? Colors.teal.withOpacity(0.08) : AppColors.primary.withOpacity(0.05),
+        if (hasLocation)
+          ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: hasLocation ? Colors.teal.withOpacity(0.3) : AppColors.divider),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.map_outlined, color: hasLocation ? Colors.teal : AppColors.textSecondary, size: 48),
-                const SizedBox(height: 8),
-                Text(
-                  hasLocation ? 'موقعیت مکانی ثبت شده' : 'موقعیت مکانی ثبت نشده',
-                  style: TextStyle(fontFamily: 'Vazirmatn', color: hasLocation ? Colors.teal : AppColors.textSecondary),
+            child: SizedBox(
+              height: 220,
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: LatLng(salon.lat, salon.lng),
+                  initialZoom: 15,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                  ),
                 ),
-                if (hasLocation) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'طول: ${salon.lat.toStringAsFixed(4)} | عرض: ${salon.lng.toStringAsFixed(4)}',
-                    style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.barberbook',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: LatLng(salon.lat, salon.lng),
+                        width: 44,
+                        height: 44,
+                        child: const Icon(Icons.location_pin, color: Colors.red, size: 44),
+                      ),
+                    ],
+                  ),
+                  const RichAttributionWidget(
+                    attributions: [TextSourceAttribution('OpenStreetMap')],
                   ),
                 ],
-              ],
+              ),
+            ),
+          )
+        else
+          Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.location_off_outlined, color: AppColors.textSecondary, size: 32),
+                  SizedBox(height: 6),
+                  Text('موقعیت مکانی ثبت نشده', style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary, fontSize: 13)),
+                ],
+              ),
             ),
           ),
-        ),
       ],
     );
   }

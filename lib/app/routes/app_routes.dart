@@ -23,4 +23,5 @@ abstract class Routes {
   static const phoneOtp = '/auth/phone-otp';
   static const forgotPassword = '/auth/forgot-password';
   static const pendingApproval = '/auth/pending-approval';
+  static const locationPicker = '/map/location-picker';
 }

@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../core/storage/storage_service.dart';
+import '../core/storage/data_service.dart';
 import '../data/mock/mock_data.dart';
 import '../data/models/user_model.dart';
 
@@ -75,6 +76,7 @@ class AuthController extends GetxController {
     MockData.users.add(user);
     await StorageService.saveToken('tok_${user.id}');
     await StorageService.saveUser(user);
+    DataService.saveAll();
     isLoading.value = false;
     return true;
   }
@@ -145,6 +147,7 @@ class AuthController extends GetxController {
     MockData.users.add(user);
     await StorageService.saveToken('tok_${user.id}');
     await StorageService.saveUser(user);
+    DataService.saveAll();
     isLoading.value = false;
     return true;
   }

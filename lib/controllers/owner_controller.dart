@@ -5,6 +5,7 @@ import '../data/models/stylist_model.dart';
 import '../data/models/appointment_model.dart';
 import '../data/mock/mock_data.dart';
 import '../core/storage/storage_service.dart';
+import '../core/storage/data_service.dart';
 
 class WorkingDay {
   bool isOff;
@@ -71,17 +72,20 @@ class OwnerController extends GetxController {
         rating: 5.0,
       ));
     }
+    DataService.saveAll();
   }
 
   void updateSalon(SalonModel updated) {
     final idx = MockData.salons.indexWhere((s) => s.id == updated.id);
     if (idx != -1) MockData.salons[idx] = updated;
     salon.value = updated;
+    DataService.saveAll();
   }
 
   void addService(ServiceModel s) {
     MockData.services.add(s);
     services.add(s);
+    DataService.saveAll();
   }
 
   void updateService(ServiceModel updated) {
@@ -89,11 +93,13 @@ class OwnerController extends GetxController {
     if (mIdx != -1) MockData.services[mIdx] = updated;
     final lIdx = services.indexWhere((s) => s.id == updated.id);
     if (lIdx != -1) services[lIdx] = updated;
+    DataService.saveAll();
   }
 
   void deleteService(String serviceId) {
     MockData.services.removeWhere((s) => s.id == serviceId);
     services.removeWhere((s) => s.id == serviceId);
+    DataService.saveAll();
   }
 
   void updateWorkingDay(int dayIdx, WorkingDay updated) {

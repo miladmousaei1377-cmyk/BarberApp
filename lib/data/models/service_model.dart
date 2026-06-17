@@ -34,6 +34,16 @@ class ServiceModel {
         isActive: isActive ?? this.isActive,
       );
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'salon_id': salonId,
+        'name': name,
+        'duration_minutes': durationMinutes,
+        'price': price,
+        'category': category,
+        'is_active': isActive,
+      };
+
   factory ServiceModel.fromJson(Map<String, dynamic> json) => ServiceModel(
         id: json['id'],
         salonId: json['salon_id'],

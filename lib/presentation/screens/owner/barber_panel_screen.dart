@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
@@ -1992,6 +1995,13 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
   late final TextEditingController _descCtrl;
   late final TextEditingController _phoneCtrl;
   late SalonCategory _category;
+  late TimeOfDay _startTime;
+  late TimeOfDay _endTime;
+  late double _lat;
+  late double _lng;
+  late bool _locationEnabled;
+  late List<String> _images;
+  final _imagePicker = ImagePicker();
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -2002,6 +2012,67 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
     _descCtrl = TextEditingController(text: widget.salon.description);
     _phoneCtrl = TextEditingController(text: widget.salon.phone ?? '');
     _category = widget.salon.category == SalonCategory.unisex ? SalonCategory.male : widget.salon.category;
+    // Parse openTime / closeTime strings (e.g. "09:00")
+    _startTime = _parseTime(widget.salon.openTime) ?? const TimeOfDay(hour: 9, minute: 0);
+    _endTime = _parseTime(widget.salon.closeTime) ?? const TimeOfDay(hour: 21, minute: 0);
+    _lat = widget.salon.lat;
+    _lng = widget.salon.lng;
+    _locationEnabled = widget.salon.lat != 0.0 && widget.salon.lng != 0.0;
+    _images = List<String>.from(widget.salon.images);
+  }
+
+  TimeOfDay? _parseTime(String? s) {
+    if (s == null || s.isEmpty) return null;
+    final parts = s.split(':');
+    if (parts.length != 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null) return null;
+    return TimeOfDay(hour: h, minute: m);
+  }
+
+  String _formatTime(TimeOfDay t) {
+    final h = t.hour.toString().padLeft(2, '0');
+    final m = t.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  Future<void> _pickTime(bool isStart) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: isStart ? _startTime : _endTime,
+      builder: (ctx, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startTime = picked;
+        } else {
+          _endTime = picked;
+        }
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (picked != null) {
+      setState(() => _images.add(picked.path));
+    }
+  }
+
+  Future<void> _pickLocation() async {
+    final result = await Get.toNamed(
+      Routes.locationPicker,
+      arguments: _locationEnabled ? LatLng(_lat, _lng) : null,
+    );
+    if (result != null && result is LatLng) {
+      setState(() {
+        _lat = result.latitude;
+        _lng = result.longitude;
+        _locationEnabled = true;
+      });
+    }
   }
 
   @override
@@ -2018,6 +2089,11 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
       description: _descCtrl.text.trim(),
       phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
       category: _category,
+      openTime: _formatTime(_startTime),
+      closeTime: _formatTime(_endTime),
+      lat: _locationEnabled ? _lat : 0.0,
+      lng: _locationEnabled ? _lng : 0.0,
+      images: _images,
     ));
     Get.back();
     Get.snackbar('ذخیره شد', 'اطلاعات آرایشگاه به‌روز شد', backgroundColor: _kSuccess, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
@@ -2042,18 +2118,186 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
               const SizedBox(height: 16),
               _SheetField(controller: _nameCtrl, label: 'نام آرایشگاه', icon: Icons.store_outlined, validator: (v) => (v == null || v.trim().length < 2) ? 'نام باید حداقل ۲ کاراکتر باشد' : null),
               const SizedBox(height: 12),
-              _SheetField(controller: _addressCtrl, label: 'آدرس', icon: Icons.location_on_outlined, validator: (v) => (v == null || v.trim().length < 5) ? 'آدرس باید حداقل ۵ کاراکتر باشد' : null),
-              const SizedBox(height: 12),
               _SheetField(controller: _phoneCtrl, label: 'شماره تماس (اختیاری)', icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
               const SizedBox(height: 12),
-              _SheetField(controller: _descCtrl, label: 'توضیحات', icon: Icons.description_outlined, maxLines: 3),
+              _SheetField(controller: _addressCtrl, label: 'آدرس', icon: Icons.location_on_outlined, validator: (v) => (v == null || v.trim().length < 5) ? 'آدرس باید حداقل ۵ کاراکتر باشد' : null),
               const SizedBox(height: 12),
+              // Category chips
               Row(
                 children: [
                   _CatChip(label: 'مردانه', icon: Icons.man_outlined, selected: _category == SalonCategory.male, onTap: () => setState(() => _category = SalonCategory.male)),
                   const SizedBox(width: 8),
                   _CatChip(label: 'زنانه', icon: Icons.woman_outlined, selected: _category == SalonCategory.female, onTap: () => setState(() => _category = SalonCategory.female)),
                 ],
+              ),
+              const SizedBox(height: 12),
+              // Working hours
+              const Text('ساعت کاری', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: _kPrimary)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _pickTime(true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.wb_sunny_outlined, size: 16, color: _kPrimary),
+                            const SizedBox(width: 6),
+                            Text(_formatTime(_startTime), style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600, color: _kPrimary)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Text('تا', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _pickTime(false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.nights_stay_outlined, size: 16, color: _kPrimary),
+                            const SizedBox(width: 6),
+                            Text(_formatTime(_endTime), style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600, color: _kPrimary)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _SheetField(controller: _descCtrl, label: 'توضیحات', icon: Icons.description_outlined, maxLines: 3),
+              const SizedBox(height: 12),
+              // Location section
+              Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('موقعیت مکانی', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: _kPrimary)),
+                        Text('اختیاری', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 11, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _locationEnabled,
+                    onChanged: (v) => setState(() => _locationEnabled = v),
+                    activeColor: _kPrimary,
+                  ),
+                ],
+              ),
+              if (_locationEnabled) ...[
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: _pickLocation,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _kPrimary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _kPrimary.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_pin, color: _kPrimary, size: 24),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _lat != 0.0
+                                ? 'طول: ${_lat.toStringAsFixed(4)} | عرض: ${_lng.toStringAsFixed(4)}'
+                                : 'برای انتخاب روی نقشه ضربه بزنید',
+                            style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: _kPrimary),
+                          ),
+                        ),
+                        const Icon(Icons.edit_location_alt_outlined, color: _kPrimary, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              // Images section
+              const Text('تصاویر آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: _kPrimary)),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 80,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    ...List.generate(_images.length, (i) => Container(
+                      width: 80,
+                      height: 80,
+                      margin: const EdgeInsets.only(left: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: _kPrimary.withOpacity(0.3)),
+                      ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(9),
+                            child: Image.file(File(_images[i]), fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.grey),
+                            ),
+                          ),
+                          Positioned(
+                            top: 3,
+                            right: 3,
+                            child: GestureDetector(
+                              onTap: () => setState(() => _images.removeAt(i)),
+                              child: Container(
+                                width: 20,
+                                height: 20,
+                                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                child: const Icon(Icons.close, color: Colors.white, size: 13),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                    if (_images.length < 5)
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate_outlined, color: Colors.grey, size: 24),
+                              SizedBox(height: 4),
+                              Text('افزودن', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 10, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
