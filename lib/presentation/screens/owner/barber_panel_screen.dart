@@ -5,6 +5,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
@@ -27,6 +31,13 @@ const _kBg      = Color(0xFFF4F6FA);
 const _kSurface = Colors.white;
 
 const _dayNames = ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'];
+
+const _kIranCities = [
+  'تهران', 'مشهد', 'اصفهان', 'کرج', 'شیراز', 'تبریز', 'اهواز',
+  'قم', 'کرمانشاه', 'ارومیه', 'رشت', 'زاهدان', 'همدان', 'کرمان',
+  'یزد', 'اردبیل', 'بندر عباس', 'اراک', 'قزوین', 'سنندج',
+  'سمنان', 'گرگان', 'ساری', 'زنجان', 'بیرجند', 'خرم‌آباد',
+];
 
 // ════════════════════════════════════════════════════════════════════════════
 // Main screen  —  tabs: داشبورد / نوبت‌ها / سالن / آمار / پروفایل
@@ -157,10 +168,115 @@ class _BarberPanelScreenState extends State<BarberPanelScreen> {
 // TAB 1 — Dashboard
 // ════════════════════════════════════════════════════════════════════════════
 
-class _DashboardTab extends StatelessWidget {
+class _DashboardTab extends StatefulWidget {
   final void Function(int) onNavigateToTab;
   final VoidCallback? onNavigateToAptsAllTab;
   const _DashboardTab({required this.onNavigateToTab, this.onNavigateToAptsAllTab});
+
+  @override
+  State<_DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<_DashboardTab> {
+  String? _selectedCity;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCity = StorageService.selectedCity;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!StorageService.hasCitySelected && mounted) {
+        _showCitySelector(firstTime: true);
+      }
+    });
+  }
+
+  void _showCitySelector({bool firstTime = false}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) {
+        final searchCtrl = TextEditingController();
+        return StatefulBuilder(
+          builder: (ctx, setS) {
+            final query = searchCtrl.text.trim();
+            final filtered = query.isEmpty
+                ? _kIranCities
+                : _kIranCities.where((c) => c.contains(query)).toList();
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.location_city, color: _kPrimary, size: 24),
+                            const SizedBox(width: 8),
+                            Text(
+                              firstTime ? 'شهر خود را انتخاب کنید' : 'تغییر شهر',
+                              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: _kPrimary),
+                            ),
+                          ],
+                        ),
+                        if (firstTime) ...[
+                          const SizedBox(height: 4),
+                          const Text('برای نمایش آرایشگاه‌های شهر خود', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.grey)),
+                        ],
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: searchCtrl,
+                          textDirection: TextDirection.rtl,
+                          style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'جستجوی شهر...',
+                            hintStyle: const TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey, fontSize: 13),
+                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          ),
+                          onChanged: (_) => setS(() {}),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 280,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) {
+                        final city = filtered[i];
+                        final isSelected = city == _selectedCity;
+                        return ListTile(
+                          title: Text(city, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal, color: isSelected ? _kPrimary : Colors.black87)),
+                          trailing: isSelected ? const Icon(Icons.check_circle, color: _kPrimary, size: 20) : null,
+                          onTap: () async {
+                            await StorageService.setSelectedCity(city);
+                            if (mounted) {
+                              setState(() => _selectedCity = city);
+                              Navigator.pop(ctx);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +297,31 @@ class _DashboardTab extends StatelessWidget {
               pinned: true,
               automaticallyImplyLeading: false,
               backgroundColor: _kPrimary,
+              actions: [
+                GestureDetector(
+                  onTap: () => _showCitySelector(),
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 12, top: 10, bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white30),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.location_city, color: Colors.white, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          _selectedCity ?? 'انتخاب شهر',
+                          style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: const BoxDecoration(
@@ -229,15 +370,15 @@ class _DashboardTab extends StatelessWidget {
                         value: PersianUtils.toPersianDigits(todayApts.length.toString()),
                         icon: Icons.calendar_today,
                         color: _kAccent,
-                        onTap: () => onNavigateToTab(1),
+                        onTap: () => widget.onNavigateToTab(1),
                       ),
                       const SizedBox(width: 12),
                       _MiniStat(
-                        label: 'درآمد امروز',
-                        value: PersianUtils.formatPriceShort(ctrl.todayRevenue),
-                        icon: Icons.payments_outlined,
+                        label: 'نوبت‌های هفتگی',
+                        value: PersianUtils.toPersianDigits(ctrl.weekAppointmentCount.toString()),
+                        icon: Icons.date_range_outlined,
                         color: _kSuccess,
-                        onTap: () => onNavigateToTab(3),
+                        onTap: () => widget.onNavigateToTab(1),
                       ),
                     ],
                   ),
@@ -245,11 +386,11 @@ class _DashboardTab extends StatelessWidget {
                   Row(
                     children: [
                       _MiniStat(
-                        label: 'درآمد ماه',
-                        value: PersianUtils.formatPriceShort(ctrl.monthRevenue),
-                        icon: Icons.trending_up,
+                        label: 'نوبت‌های ماهانه',
+                        value: PersianUtils.toPersianDigits(ctrl.monthAppointmentCount.toString()),
+                        icon: Icons.bar_chart_outlined,
                         color: _kPrimary,
-                        onTap: () => onNavigateToTab(3),
+                        onTap: () => widget.onNavigateToTab(3),
                       ),
                       const SizedBox(width: 12),
                       _MiniStat(
@@ -257,7 +398,7 @@ class _DashboardTab extends StatelessWidget {
                         value: PersianUtils.toPersianDigits(ctrl.monthAppointmentCount.toString()),
                         icon: Icons.people_outline,
                         color: _kWarning,
-                        onTap: onNavigateToAptsAllTab ?? () => onNavigateToTab(1),
+                        onTap: widget.onNavigateToAptsAllTab ?? () => widget.onNavigateToTab(1),
                       ),
                     ],
                   ),
@@ -393,7 +534,44 @@ class _TodayApts extends StatelessWidget {
       return ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: apts.length,
-        itemBuilder: (_, i) => _AptCard(apt: apts[i], showActions: true),
+        itemBuilder: (_, i) {
+          final apt = apts[i];
+          return Dismissible(
+            key: Key(apt.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(color: _kDanger, borderRadius: BorderRadius.circular(12)),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(left: 20),
+              child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+            ),
+            confirmDismiss: (_) => showDialog<bool>(
+              context: context,
+              builder: (ctx) => Directionality(
+                textDirection: TextDirection.rtl,
+                child: AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('حذف نوبت', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                  content: const Text('این نوبت از سیستم حذف می‌شود. آیا مطمئن هستید؟', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14)),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey))),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(backgroundColor: _kDanger, foregroundColor: Colors.white),
+                      child: const Text('حذف', style: TextStyle(fontFamily: 'Vazirmatn')),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            onDismissed: (_) {
+              OwnerController.to.deleteAppointment(apt.id);
+              Get.snackbar('حذف شد', 'نوبت از سیستم حذف شد', backgroundColor: _kDanger, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+            },
+            child: _AptCard(apt: apt, showActions: true),
+          );
+        },
       );
     });
   }
@@ -475,7 +653,44 @@ class _WeeklyAptsState extends State<_WeeklyApts> {
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: dayApts.length,
-                    itemBuilder: (_, i) => _AptCard(apt: dayApts[i], showActions: true),
+                    itemBuilder: (_, i) {
+                      final apt = dayApts[i];
+                      return Dismissible(
+                        key: Key(apt.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(color: _kDanger, borderRadius: BorderRadius.circular(12)),
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.only(left: 20),
+                          child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+                        ),
+                        confirmDismiss: (_) => showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Text('حذف نوبت', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                              content: const Text('این نوبت از سیستم حذف می‌شود. آیا مطمئن هستید؟', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14)),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey))),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  style: ElevatedButton.styleFrom(backgroundColor: _kDanger, foregroundColor: Colors.white),
+                                  child: const Text('حذف', style: TextStyle(fontFamily: 'Vazirmatn')),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        onDismissed: (_) {
+                          OwnerController.to.deleteAppointment(apt.id);
+                          Get.snackbar('حذف شد', 'نوبت از سیستم حذف شد', backgroundColor: _kDanger, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+                        },
+                        child: _AptCard(apt: apt, showActions: true),
+                      );
+                    },
                   ),
           ),
         ],
@@ -527,7 +742,44 @@ class _AllAptsState extends State<_AllApts> {
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     itemCount: apts.length,
-                    itemBuilder: (_, i) => _AptCard(apt: apts[i], showActions: true),
+                    itemBuilder: (_, i) {
+                      final apt = apts[i];
+                      return Dismissible(
+                        key: Key(apt.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(color: _kDanger, borderRadius: BorderRadius.circular(12)),
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.only(left: 20),
+                          child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+                        ),
+                        confirmDismiss: (_) => showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Text('حذف نوبت', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                              content: const Text('این نوبت از سیستم حذف می‌شود. آیا مطمئن هستید؟', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14)),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey))),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  style: ElevatedButton.styleFrom(backgroundColor: _kDanger, foregroundColor: Colors.white),
+                                  child: const Text('حذف', style: TextStyle(fontFamily: 'Vazirmatn')),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        onDismissed: (_) {
+                          OwnerController.to.deleteAppointment(apt.id);
+                          Get.snackbar('حذف شد', 'نوبت از سیستم حذف شد', backgroundColor: _kDanger, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+                        },
+                        child: _AptCard(apt: apt, showActions: true),
+                      );
+                    },
                   ),
           ),
         ],
@@ -1159,8 +1411,186 @@ class _ServiceSheetState extends State<_ServiceSheet> {
 // TAB 4 — Stats
 // ════════════════════════════════════════════════════════════════════════════
 
-class _StatsTab extends StatelessWidget {
+class _StatsTab extends StatefulWidget {
   const _StatsTab();
+  @override
+  State<_StatsTab> createState() => _StatsTabState();
+}
+
+class _StatsTabState extends State<_StatsTab> {
+  void _showDownloadDialog(BuildContext context, OwnerController ctrl) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.download_outlined, color: _kPrimary),
+              SizedBox(width: 10),
+              Text('دریافت گزارش', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+            ],
+          ),
+          content: const Text('فرمت دریافت گزارش را انتخاب کنید:', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+            ),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _exportCsv(ctrl);
+              },
+              icon: const Icon(Icons.table_chart_outlined, size: 18),
+              label: const Text('اکسل (CSV)', style: TextStyle(fontFamily: 'Vazirmatn')),
+              style: OutlinedButton.styleFrom(foregroundColor: _kSuccess),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _exportPdf(ctrl);
+              },
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              label: const Text('PDF', style: TextStyle(fontFamily: 'Vazirmatn')),
+              style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportCsv(OwnerController ctrl) async {
+    try {
+      final apts = ctrl.appointments.toList();
+      final buf = StringBuffer();
+      buf.writeln('تاریخ,زمان,مشتری,خدمت,وضعیت');
+      for (final a in apts) {
+        final date = '${a.date.year}/${a.date.month}/${a.date.day}';
+        buf.writeln('"$date","${a.startTime}","${a.userName ?? '-'}","${a.serviceNames.join(' / ')}","${a.statusLabel}"');
+      }
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/appointments_report.csv');
+      await file.writeAsString(buf.toString());
+      Get.snackbar('ذخیره شد', 'فایل CSV در پوشه موقت ذخیره شد\n${file.path}',
+          backgroundColor: _kSuccess, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 4));
+    } catch (e) {
+      Get.snackbar('خطا', 'خطا در تولید فایل: $e', backgroundColor: _kDanger, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  Future<void> _exportPdf(OwnerController ctrl) async {
+    try {
+      final fontData = await rootBundle.load('assets/fonts/Vazirmatn-Regular.ttf');
+      final ttf = pw.Font.ttf(fontData);
+      final boldData = await rootBundle.load('assets/fonts/Vazirmatn-Bold.ttf');
+      final boldTtf = pw.Font.ttf(boldData);
+
+      final apts = ctrl.appointments.toList();
+      final now = DateTime.now();
+
+      final doc = pw.Document();
+      doc.addPage(
+        pw.MultiPage(
+          textDirection: pw.TextDirection.rtl,
+          pageFormat: PdfPageFormat.a4,
+          build: (context) => [
+            pw.Center(
+              child: pw.Text(
+                'گزارش نوبت‌های آرایشگاه',
+                style: pw.TextStyle(font: boldTtf, fontSize: 20),
+                textDirection: pw.TextDirection.rtl,
+              ),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Center(
+              child: pw.Text(
+                'تاریخ تهیه: ${now.year}/${now.month}/${now.day}',
+                style: pw.TextStyle(font: ttf, fontSize: 12, color: PdfColors.grey),
+                textDirection: pw.TextDirection.rtl,
+              ),
+            ),
+            pw.SizedBox(height: 16),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+              children: [
+                _pdfStatBox(ttf, boldTtf, 'کل نوبت‌ها', '${apts.length}'),
+                _pdfStatBox(ttf, boldTtf, 'این ماه', '${ctrl.monthAppointmentCount}'),
+                _pdfStatBox(ttf, boldTtf, 'این هفته', '${ctrl.weekAppointmentCount}'),
+                _pdfStatBox(ttf, boldTtf, 'امروز', '${ctrl.todayAppointments.length}'),
+              ],
+            ),
+            pw.SizedBox(height: 20),
+            pw.Text('جزئیات نوبت‌ها', style: pw.TextStyle(font: boldTtf, fontSize: 14), textDirection: pw.TextDirection.rtl),
+            pw.SizedBox(height: 8),
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(2),
+                1: const pw.FlexColumnWidth(1.5),
+                2: const pw.FlexColumnWidth(2),
+                3: const pw.FlexColumnWidth(1.5),
+                4: const pw.FlexColumnWidth(1.5),
+              },
+              children: [
+                pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0F3460)),
+                  children: [
+                    _pdfCell(boldTtf, 'مشتری', isHeader: true),
+                    _pdfCell(boldTtf, 'تاریخ', isHeader: true),
+                    _pdfCell(boldTtf, 'خدمت', isHeader: true),
+                    _pdfCell(boldTtf, 'زمان', isHeader: true),
+                    _pdfCell(boldTtf, 'وضعیت', isHeader: true),
+                  ],
+                ),
+                ...apts.take(50).map((a) => pw.TableRow(
+                  children: [
+                    _pdfCell(ttf, a.userName ?? '-'),
+                    _pdfCell(ttf, '${a.date.year}/${a.date.month}/${a.date.day}'),
+                    _pdfCell(ttf, a.serviceNames.take(1).join()),
+                    _pdfCell(ttf, a.startTime),
+                    _pdfCell(ttf, a.statusLabel),
+                  ],
+                )),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      await Printing.sharePdf(bytes: await doc.save(), filename: 'appointments_report.pdf');
+    } catch (e) {
+      Get.snackbar('خطا', 'خطا در تولید PDF: $e', backgroundColor: _kDanger, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  pw.Widget _pdfStatBox(pw.Font ttf, pw.Font boldTtf, String label, String value) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(8),
+      decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300), borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8))),
+      child: pw.Column(
+        children: [
+          pw.Text(value, style: pw.TextStyle(font: boldTtf, fontSize: 16, color: const PdfColor.fromInt(0xFF0F3460)), textDirection: pw.TextDirection.rtl),
+          pw.SizedBox(height: 4),
+          pw.Text(label, style: pw.TextStyle(font: ttf, fontSize: 10, color: PdfColors.grey), textDirection: pw.TextDirection.rtl),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _pdfCell(pw.Font font, String text, {bool isHeader = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(6),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(font: font, fontSize: 10, color: isHeader ? PdfColors.white : PdfColors.black),
+        textDirection: pw.TextDirection.rtl,
+        textAlign: pw.TextAlign.right,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1170,29 +1600,36 @@ class _StatsTab extends StatelessWidget {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         foregroundColor: _kPrimary,
-        title: const Text('آمار و درآمد', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: _kPrimary)),
+        title: const Text('آمار و گزارشات', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: _kPrimary)),
+        actions: [
+          Obx(() => IconButton(
+            icon: const Icon(Icons.download_outlined, color: _kPrimary),
+            tooltip: 'دریافت گزارش',
+            onPressed: () => _showDownloadDialog(context, OwnerController.to),
+          )),
+        ],
       ),
       body: Obx(() {
         final ctrl = OwnerController.to;
-        final revenues = ctrl.last7DaysRevenue;
-        final maxRev = revenues.isEmpty ? 1 : (revenues.reduce((a, b) => a > b ? a : b) == 0 ? 1 : revenues.reduce((a, b) => a > b ? a : b));
+        final counts = ctrl.last7DaysAppointmentCount;
+        final maxCount = counts.isEmpty ? 1 : (counts.reduce((a, b) => a > b ? a : b) == 0 ? 1 : counts.reduce((a, b) => a > b ? a : b));
 
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Row(
               children: [
-                _RevCard(label: 'امروز', value: PersianUtils.formatPriceShort(ctrl.todayRevenue), color: _kAccent),
+                _RevCard(label: 'امروز', value: PersianUtils.toPersianDigits(ctrl.todayAppointments.length.toString()), color: _kAccent),
                 const SizedBox(width: 12),
-                _RevCard(label: 'هفتگی', value: PersianUtils.formatPriceShort(ctrl.weekRevenue), color: _kPrimary),
+                _RevCard(label: 'هفتگی', value: PersianUtils.toPersianDigits(ctrl.weekAppointmentCount.toString()), color: _kPrimary),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                _RevCard(label: 'ماهانه', value: PersianUtils.formatPriceShort(ctrl.monthRevenue), color: _kSuccess),
+                _RevCard(label: 'ماهانه', value: PersianUtils.toPersianDigits(ctrl.monthAppointmentCount.toString()), color: _kSuccess),
                 const SizedBox(width: 12),
-                _RevCard(label: 'نوبت‌های ماه', value: PersianUtils.toPersianDigits(ctrl.monthAppointmentCount.toString()), color: _kWarning),
+                _RevCard(label: 'لغو شده', value: PersianUtils.toPersianDigits(ctrl.appointments.where((a) => a.status == AppointmentStatus.cancelled).length.toString()), color: _kDanger),
               ],
             ),
             const SizedBox(height: 24),
@@ -1206,9 +1643,9 @@ class _StatsTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('درآمد ۷ روز گذشته', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary)),
+                  const Text('نوبت‌های ۷ روز گذشته', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary)),
                   const SizedBox(height: 16),
-                  SizedBox(height: 140, child: _BarChart(revenues: revenues, maxValue: maxRev)),
+                  SizedBox(height: 140, child: _BarChart(revenues: counts, maxValue: maxCount)),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1575,6 +2012,9 @@ class _OwnerProfileTabState extends State<_OwnerProfileTab> {
                       setState(() {});
                       Navigator.pop(ctx);
                       Get.snackbar('ذخیره شد', 'پروفایل با موفقیت به‌روز شد', backgroundColor: _kSuccess, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+                      if (newPassword != null) {
+                        Get.offAllNamed(Routes.ownerPanel);
+                      }
                     },
                     style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     child: const Text('ذخیره تغییرات', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
