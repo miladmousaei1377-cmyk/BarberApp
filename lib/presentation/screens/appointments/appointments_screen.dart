@@ -105,7 +105,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
               ),
               ElevatedButton(
                 onPressed: () {
-                  MockData.cancelAppointment(id);
+                  MockData.cancelAppointment(id, reason: reasonCtrl.text.trim().isEmpty ? null : reasonCtrl.text.trim());
                   Navigator.of(ctx).pop();
                   setState(() {});
                   Get.snackbar('موفق', 'رزرو با موفقیت لغو شد',

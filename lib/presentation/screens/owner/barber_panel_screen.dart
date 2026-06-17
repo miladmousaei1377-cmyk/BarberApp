@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/utils/persian_utils.dart';
 import '../../../data/mock/mock_data.dart';
@@ -38,6 +40,7 @@ class BarberPanelScreen extends StatefulWidget {
 
 class _BarberPanelScreenState extends State<BarberPanelScreen> {
   final _tabNotifier = ValueNotifier<int>(0);
+  final _aptTabKey = GlobalKey<_AppointmentsTabState>();
 
   @override
   void initState() {
@@ -52,56 +55,100 @@ class _BarberPanelScreenState extends State<BarberPanelScreen> {
     super.dispose();
   }
 
+  void _goToAptsAllTab() {
+    _tabNotifier.value = 1;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _aptTabKey.currentState?.switchToTab(2);
+    });
+  }
+
+  Future<void> _onWillPop(BuildContext context) async {
+    if (_tabNotifier.value != 0) {
+      _tabNotifier.value = 0;
+      return;
+    }
+    final exit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('خروج از برنامه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+          content: const Text('آیا می‌خواهید از برنامه خارج شوید؟', style: TextStyle(fontFamily: 'Vazirmatn')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('خیر', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: _kDanger),
+              child: const Text('خروج', style: TextStyle(fontFamily: 'Vazirmatn')),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (exit == true) SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: _tabNotifier,
-      builder: (_, tab, __) => Scaffold(
-      backgroundColor: _kBg,
-      body: IndexedStack(
-        index: tab,
-        children: [
-          _DashboardTab(onNavigateToTab: (i) => _tabNotifier.value = i),
-          const _AppointmentsTab(),
-          const _SalonManagementTab(),
-          const _StatsTab(),
-          const _OwnerProfileTab(),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (_, __) => _onWillPop(context),
+      child: ValueListenableBuilder<int>(
+        valueListenable: _tabNotifier,
+        builder: (_, tab, __) => Scaffold(
+          backgroundColor: _kBg,
+          body: IndexedStack(
+            index: tab,
+            children: [
+              _DashboardTab(
+                onNavigateToTab: (i) => _tabNotifier.value = i,
+                onNavigateToAptsAllTab: _goToAptsAllTab,
+              ),
+              _AppointmentsTab(key: _aptTabKey),
+              const _SalonManagementTab(),
+              const _StatsTab(),
+              const _OwnerProfileTab(),
+            ],
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: tab,
+            onDestinationSelected: (i) => _tabNotifier.value = i,
+            backgroundColor: _kSurface,
+            indicatorColor: _kPrimary.withOpacity(0.12),
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard, color: _kPrimary),
+                label: 'داشبورد',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.calendar_month_outlined),
+                selectedIcon: Icon(Icons.calendar_month, color: _kPrimary),
+                label: 'نوبت‌ها',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.store_outlined),
+                selectedIcon: Icon(Icons.store, color: _kPrimary),
+                label: 'آرایشگاه',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.bar_chart_outlined),
+                selectedIcon: Icon(Icons.bar_chart, color: _kPrimary),
+                label: 'آمار',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person, color: _kPrimary),
+                label: 'پروفایل',
+              ),
+            ],
+          ),
+        ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: tab,
-        onDestinationSelected: (i) => _tabNotifier.value = i,
-        backgroundColor: _kSurface,
-        indicatorColor: _kPrimary.withOpacity(0.12),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard, color: _kPrimary),
-            label: 'داشبورد',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month, color: _kPrimary),
-            label: 'نوبت‌ها',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.store_outlined),
-            selectedIcon: Icon(Icons.store, color: _kPrimary),
-            label: 'آرایشگاه',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart, color: _kPrimary),
-            label: 'آمار',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person, color: _kPrimary),
-            label: 'پروفایل',
-          ),
-        ],
-      ),
-    ),
     );
   }
 }
@@ -112,7 +159,8 @@ class _BarberPanelScreenState extends State<BarberPanelScreen> {
 
 class _DashboardTab extends StatelessWidget {
   final void Function(int) onNavigateToTab;
-  const _DashboardTab({required this.onNavigateToTab});
+  final VoidCallback? onNavigateToAptsAllTab;
+  const _DashboardTab({required this.onNavigateToTab, this.onNavigateToAptsAllTab});
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +257,7 @@ class _DashboardTab extends StatelessWidget {
                         value: PersianUtils.toPersianDigits(ctrl.monthAppointmentCount.toString()),
                         icon: Icons.people_outline,
                         color: _kWarning,
-                        onTap: () => onNavigateToTab(1),
+                        onTap: onNavigateToAptsAllTab ?? () => onNavigateToTab(1),
                       ),
                     ],
                   ),
@@ -280,7 +328,7 @@ class _DashboardTab extends StatelessWidget {
 // ════════════════════════════════════════════════════════════════════════════
 
 class _AppointmentsTab extends StatefulWidget {
-  const _AppointmentsTab();
+  const _AppointmentsTab({super.key});
   @override
   State<_AppointmentsTab> createState() => _AppointmentsTabState();
 }
@@ -298,6 +346,10 @@ class _AppointmentsTabState extends State<_AppointmentsTab> with SingleTickerPro
   void dispose() {
     _tabCtrl.dispose();
     super.dispose();
+  }
+
+  void switchToTab(int index) {
+    if (_tabCtrl.index != index) _tabCtrl.animateTo(index);
   }
 
   @override
@@ -1246,6 +1298,24 @@ class _OwnerProfileTab extends StatefulWidget {
 }
 
 class _OwnerProfileTabState extends State<_OwnerProfileTab> {
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometric();
+  }
+
+  Future<void> _checkBiometric() async {
+    final avail = await BiometricService.isAvailable();
+    if (!mounted) return;
+    setState(() {
+      _biometricAvailable = avail;
+      _biometricEnabled = StorageService.biometricEnabled;
+    });
+  }
+
   Future<void> _pickAvatar() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked == null) return;
@@ -1334,9 +1404,31 @@ class _OwnerProfileTabState extends State<_OwnerProfileTab> {
             _OwnerMenuItem(Icons.star_outline, 'نظرات آرایشگاه', () => _showReviews(context, ctrl)),
           ]),
           const SizedBox(height: 12),
+          if (_biometricAvailable) ...[
+            Container(
+              decoration: BoxDecoration(color: _kSurface, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)]),
+              child: SwitchListTile(
+                secondary: const Icon(Icons.fingerprint, color: _kPrimary),
+                title: const Text('ورود با اثر انگشت', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14)),
+                subtitle: const Text('فعال‌سازی بیومتریک برای ورود سریع', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 11, color: Colors.grey)),
+                value: _biometricEnabled,
+                activeColor: _kPrimary,
+                onChanged: (v) async {
+                  if (v) {
+                    final ok = await BiometricService.authenticate();
+                    if (!ok) return;
+                  }
+                  await StorageService.setBiometricEnabled(v);
+                  if (mounted) setState(() => _biometricEnabled = v);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           _OwnerMenuSection(title: 'پشتیبانی', items: [
-            _OwnerMenuItem(Icons.help_outline, 'راهنما و پشتیبانی', () => _showSupport(context)),
-            _OwnerMenuItem(Icons.info_outline, 'درباره آراپوینت', () => _showAbout(context)),
+            _OwnerMenuItem(Icons.menu_book_outlined, 'راهنمای آرایشگر', () => Get.to(() => const _OwnerHelpPage())),
+            _OwnerMenuItem(Icons.support_agent_outlined, 'پشتیبانی', () => Get.to(() => const _OwnerSupportPage())),
+            _OwnerMenuItem(Icons.info_outline, 'درباره آراپوینت', () => Get.to(() => const _OwnerAboutPage())),
           ]),
           const SizedBox(height: 24),
           OutlinedButton.icon(
@@ -1550,21 +1642,6 @@ class _OwnerProfileTabState extends State<_OwnerProfileTab> {
     );
   }
 
-  void _showSupport(BuildContext context) {
-    Get.snackbar('پشتیبانی', 'تلفن: ۰۲۱-۱۲۳۴۵۶۷۸ | support@arapoint.ir', backgroundColor: _kPrimary, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 4));
-  }
-
-  void _showAbout(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(children: [Icon(Icons.content_cut, color: Color(0xFF0F3460)), SizedBox(width: 8), Text('درباره آراپوینت', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 16))]),
-        content: const Text('آراپوینت — پلتفرم هوشمند نوبت‌دهی آرایشگاه\nنسخه ۱.۰.۰\n\nwww.arapoint.ir', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, height: 1.7)),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('بستن', style: TextStyle(fontFamily: 'Vazirmatn')))],
-      ),
-    );
-  }
 }
 
 class _OwnerMenuSection extends StatelessWidget {
@@ -1684,6 +1761,31 @@ class _AptCard extends StatelessWidget {
             PersianUtils.gregorianToJalali(apt.date),
             style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey),
           ),
+          if (apt.status == AppointmentStatus.cancelled && apt.notes != null && apt.notes!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: _kDanger.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _kDanger.withOpacity(0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 13, color: _kDanger),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'دلیل لغو: ${apt.notes!}',
+                      style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 11, color: _kDanger, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (showActions && (apt.status == AppointmentStatus.pending || apt.status == AppointmentStatus.confirmed)) ...[
             const SizedBox(height: 10),
             const Divider(height: 1),
@@ -1743,7 +1845,7 @@ void _showCancelDialog(BuildContext context, OwnerController ctrl, String aptId)
           ),
           ElevatedButton(
             onPressed: () {
-              ctrl.cancelAppointmentByOwner(aptId);
+              ctrl.cancelAppointmentByOwner(aptId, reason: reasonCtrl.text.trim().isEmpty ? null : reasonCtrl.text.trim());
               Navigator.pop(ctx);
               Get.snackbar('لغو شد', 'نوبت با موفقیت لغو شد', backgroundColor: _kDanger, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
             },
@@ -2486,6 +2588,349 @@ class _CatChip extends StatelessWidget {
               Text(label, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: selected ? _kPrimary : Colors.grey, fontWeight: selected ? FontWeight.w700 : FontWeight.normal)),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Full-page screens for barber profile
+// ════════════════════════════════════════════════════════════════════════════
+
+class _OwnerAboutPage extends StatelessWidget {
+  const _OwnerAboutPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('درباره آراپوینت', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 16),
+          Center(
+            child: Container(
+              width: 100, height: 100,
+              decoration: BoxDecoration(color: _kPrimary.withOpacity(0.1), shape: BoxShape.circle),
+              child: const Icon(Icons.content_cut, color: _kPrimary, size: 52),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Center(child: Text('آراپوینت', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 26, fontWeight: FontWeight.w900, color: _kPrimary))),
+          const SizedBox(height: 4),
+          const Center(child: Text('پلتفرم هوشمند نوبت‌دهی آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.grey))),
+          const SizedBox(height: 32),
+          _AboutCard(
+            icon: Icons.info_outline,
+            title: 'نسخه برنامه',
+            content: '۱.۰.۰ — نسخه پایدار',
+          ),
+          const SizedBox(height: 12),
+          _AboutCard(
+            icon: Icons.business,
+            title: 'شرکت سازنده',
+            content: 'تیم توسعه آراپوینت\nاعتماد، کیفیت، نوآوری',
+          ),
+          const SizedBox(height: 12),
+          _AboutCard(
+            icon: Icons.language,
+            title: 'وب‌سایت',
+            content: 'www.arapoint.ir',
+          ),
+          const SizedBox(height: 12),
+          _AboutCard(
+            icon: Icons.shield_outlined,
+            title: 'حریم خصوصی',
+            content: 'اطلاعات کاربران نزد ما کاملاً محرمانه است. هیچ داده‌ای بدون اجازه کاربر به اشتراک گذاشته نمی‌شود.',
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: _kPrimary.withOpacity(0.06), borderRadius: BorderRadius.circular(12)),
+            child: const Column(
+              children: [
+                Text('© ۲۰۲۴ آراپوینت — تمام حقوق محفوظ است', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _AboutCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String content;
+  const _AboutCard({required this.icon, required this.title, required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: _kSurface, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)]),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: _kPrimary, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w700, color: _kPrimary)),
+                const SizedBox(height: 4),
+                Text(content, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.black87, height: 1.6)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OwnerSupportPage extends StatelessWidget {
+  const _OwnerSupportPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('پشتیبانی', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [_kPrimary, _kAccent], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.support_agent, color: Colors.white, size: 52),
+                SizedBox(height: 12),
+                Text('تیم پشتیبانی آراپوینت', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                SizedBox(height: 4),
+                Text('آماده پاسخگویی ۲۴ ساعته هستیم', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.white70)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text('راه‌های ارتباطی', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary)),
+          const SizedBox(height: 12),
+          _SupportItem(icon: Icons.phone_outlined, label: 'تلفن پشتیبانی', value: '۰۲۱-۱۲۳۴۵۶۷۸', color: _kSuccess),
+          const SizedBox(height: 10),
+          _SupportItem(icon: Icons.email_outlined, label: 'ایمیل پشتیبانی', value: 'support@arapoint.ir', color: _kAccent),
+          const SizedBox(height: 10),
+          _SupportItem(icon: Icons.chat_bubble_outline, label: 'چت آنلاین', value: 'از طریق اپلیکیشن در دسترس است', color: _kPrimary),
+          const SizedBox(height: 24),
+          const Text('ساعت پاسخگویی', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kPrimary)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: _kSurface, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)]),
+            child: const Column(
+              children: [
+                _SupportHourRow(days: 'شنبه تا پنجشنبه', hours: '۸:۰۰ — ۲۱:۰۰'),
+                Divider(height: 16),
+                _SupportHourRow(days: 'جمعه', hours: '۱۰:۰۰ — ۱۸:۰۰'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _SupportItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  const _SupportItem({required this.icon, required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: _kSurface, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)]),
+      child: Row(
+        children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 2),
+                Text(value, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SupportHourRow extends StatelessWidget {
+  final String days;
+  final String hours;
+  const _SupportHourRow({required this.days, required this.hours});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Text(days, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.black87))),
+        Text(hours, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: _kPrimary)),
+      ],
+    );
+  }
+}
+
+class _OwnerHelpPage extends StatelessWidget {
+  const _OwnerHelpPage();
+
+  static const _faqs = [
+    _FaqItem(
+      question: 'چطور آرایشگاهم را ثبت کنم؟',
+      answer: 'از داشبورد یا تب آرایشگاه، روی "ثبت آرایشگاه" کلیک کنید. اطلاعات نام، آدرس، دسته‌بندی و ساعت کاری را وارد کرده و ثبت کنید.',
+    ),
+    _FaqItem(
+      question: 'چطور خدمات اضافه کنم؟',
+      answer: 'در تب آرایشگاه → قسمت خدمات، دکمه + را بزنید. نام خدمت و مدت زمان آن را وارد کنید.',
+    ),
+    _FaqItem(
+      question: 'چطور نوبت را تأیید یا لغو کنم؟',
+      answer: 'در تب نوبت‌ها، کارت هر نوبت دارای دکمه‌های "تأیید"، "انجام شد" و "لغو" است. پس از تأیید، مشتری مطلع می‌شود.',
+    ),
+    _FaqItem(
+      question: 'چطور تصاویر آرایشگاه اضافه کنم؟',
+      answer: 'در تب آرایشگاه → ویرایش اطلاعات، قسمت تصاویر آرایشگاه وجود دارد. می‌توانید تا ۵ تصویر اضافه کنید.',
+    ),
+    _FaqItem(
+      question: 'آیا می‌توانم ساعت کاری روزانه را تنظیم کنم؟',
+      answer: 'بله. در تب آرایشگاه، بخش ساعت کاری نمایش داده می‌شود. برای هر روز می‌توانید ساعت شروع و پایان، یا تعطیل بودن را تنظیم کنید.',
+    ),
+    _FaqItem(
+      question: 'چطور درآمد و آمار ببینم؟',
+      answer: 'تب آمار شامل درآمد روزانه، هفتگی و ماهانه، نمودار ۷ روز گذشته و آمار عملکرد می‌باشد.',
+    ),
+    _FaqItem(
+      question: 'چطور پروفایل خود را ویرایش کنم؟',
+      answer: 'در تب پروفایل، روی "ویرایش پروفایل" کلیک کنید. می‌توانید نام، شماره، ایمیل و رمز عبور را تغییر دهید.',
+    ),
+    _FaqItem(
+      question: 'مشتری نوبت را لغو کرده، چه کار کنم؟',
+      answer: 'نوبت‌های لغو شده در تب "همه" با رنگ قرمز نمایش داده می‌شوند. دلیل لغو (در صورت وجود) نیز نمایش داده می‌شود.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('راهنمای آرایشگر', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _kAccent.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _kAccent.withOpacity(0.2)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.menu_book_outlined, color: _kAccent, size: 28),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'سؤالات متداول آرایشگران',
+                    style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: _kAccent),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          ..._faqs.map((faq) => _FaqCard(item: faq)),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _FaqItem {
+  final String question;
+  final String answer;
+  const _FaqItem({required this.question, required this.answer});
+}
+
+class _FaqCard extends StatefulWidget {
+  final _FaqItem item;
+  const _FaqCard({required this.item});
+
+  @override
+  State<_FaqCard> createState() => _FaqCardState();
+}
+
+class _FaqCardState extends State<_FaqCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+        border: Border.all(color: _expanded ? _kPrimary.withOpacity(0.3) : Colors.transparent),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          onExpansionChanged: (v) => setState(() => _expanded = v),
+          leading: Icon(Icons.help_outline, color: _expanded ? _kPrimary : Colors.grey, size: 22),
+          title: Text(
+            widget.item.question,
+            style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600, color: _expanded ? _kPrimary : Colors.black87),
+          ),
+          children: [
+            Text(widget.item.answer, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.black87, height: 1.7)),
+          ],
         ),
       ),
     );

@@ -193,10 +193,13 @@ class MockData {
     return appointment;
   }
 
-  static bool cancelAppointment(String appointmentId) {
+  static bool cancelAppointment(String appointmentId, {String? reason}) {
     final idx = appointments.indexWhere((a) => a.id == appointmentId);
     if (idx == -1) return false;
-    appointments[idx] = appointments[idx].copyWith(status: AppointmentStatus.cancelled);
+    appointments[idx] = appointments[idx].copyWith(
+      status: AppointmentStatus.cancelled,
+      cancelReason: (reason != null && reason.trim().isNotEmpty) ? reason.trim() : null,
+    );
     onDataChanged?.call();
     return true;
   }

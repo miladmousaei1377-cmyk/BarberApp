@@ -112,7 +112,7 @@ class AppointmentModel {
         'created_at': createdAt.toIso8601String(),
       };
 
-  AppointmentModel copyWith({AppointmentStatus? status}) => AppointmentModel(
+  AppointmentModel copyWith({AppointmentStatus? status, String? cancelReason}) => AppointmentModel(
         id: id,
         userId: userId,
         userName: userName,
@@ -129,7 +129,7 @@ class AppointmentModel {
         endTime: endTime,
         status: status ?? this.status,
         totalPrice: totalPrice,
-        notes: notes,
+        notes: cancelReason ?? notes,
         createdAt: createdAt,
       );
 }

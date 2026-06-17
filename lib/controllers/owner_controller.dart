@@ -109,17 +109,19 @@ class OwnerController extends GetxController {
 
   void confirmAppointment(String id) => _setStatus(id, AppointmentStatus.confirmed);
   void completeAppointment(String id) => _setStatus(id, AppointmentStatus.done);
-  void cancelAppointmentByOwner(String id) => _setStatus(id, AppointmentStatus.cancelled);
+  void cancelAppointmentByOwner(String id, {String? reason}) =>
+      _setStatus(id, AppointmentStatus.cancelled, cancelReason: (reason != null && reason.trim().isNotEmpty) ? reason.trim() : null);
 
-  void _setStatus(String id, AppointmentStatus status) {
+  void _setStatus(String id, AppointmentStatus status, {String? cancelReason}) {
     final mIdx = MockData.appointments.indexWhere((a) => a.id == id);
     if (mIdx != -1) {
-      MockData.appointments[mIdx] = MockData.appointments[mIdx].copyWith(status: status);
+      MockData.appointments[mIdx] = MockData.appointments[mIdx].copyWith(status: status, cancelReason: cancelReason);
     }
     final lIdx = appointments.indexWhere((a) => a.id == id);
     if (lIdx != -1) {
-      appointments[lIdx] = appointments[lIdx].copyWith(status: status);
+      appointments[lIdx] = appointments[lIdx].copyWith(status: status, cancelReason: cancelReason);
     }
+    DataService.saveAll();
   }
 
   List<AppointmentModel> get todayAppointments {

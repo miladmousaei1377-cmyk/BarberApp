@@ -123,6 +123,31 @@ class AppointmentCard extends StatelessWidget {
                 _infoRow(Icons.cut_outlined, appointment.serviceNames.join('، ')),
                 const SizedBox(height: 6),
                 _infoRow(Icons.payments_outlined, PersianUtils.formatPrice(appointment.totalPrice)),
+                if (appointment.status == AppointmentStatus.cancelled && appointment.notes != null && appointment.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.error.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline, size: 14, color: AppColors.error),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'دلیل لغو: ${appointment.notes!}',
+                            style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.error, height: 1.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (appointment.canCancel || appointment.status == AppointmentStatus.done) ...[
                   const SizedBox(height: 14),
                   Row(

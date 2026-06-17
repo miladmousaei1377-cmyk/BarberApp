@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
@@ -114,7 +115,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
       isVerified: false,
       category: _selectedCategory,
       ownerId: user?.id ?? 'unknown',
-      images: const [],
+      images: _images.map((x) => x.path).toList(),
       phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
       openTime: _formatTime(_startTime),
       closeTime: _formatTime(_endTime),
@@ -388,44 +389,52 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
             ),
             if (_locationEnabled) ...[
               const SizedBox(height: 10),
-              GestureDetector(
-                onTap: _pickLocation,
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.secondary.withOpacity(0.4)),
-                  ),
-                  child: Row(
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  height: 180,
+                  child: FlutterMap(
+                    options: MapOptions(
+                      initialCenter: LatLng(_lat, _lng),
+                      initialZoom: 15,
+                      interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                    ),
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(colors: [Colors.teal.shade700, Colors.teal.shade400]),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.location_pin, color: Colors.white, size: 26),
+                      TileLayer(
+                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.barberbook.app',
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('موقعیت انتخاب شده', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary)),
-                            const SizedBox(height: 2),
-                            Text(
-                              'طول: ${_lat.toStringAsFixed(4)} | عرض: ${_lng.toStringAsFixed(4)}',
-                              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                            ),
-                          ],
-                        ),
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: LatLng(_lat, _lng),
+                            width: 40,
+                            height: 40,
+                            child: const Icon(Icons.location_pin, color: Colors.red, size: 40),
+                          ),
+                        ],
                       ),
-                      const Icon(Icons.edit_location_alt_outlined, color: AppColors.secondary, size: 20),
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.teal, size: 15),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'طول: ${_lat.toStringAsFixed(4)} | عرض: ${_lng.toStringAsFixed(4)}',
+                      style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.teal),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _pickLocation,
+                    icon: const Icon(Icons.edit_location_alt_outlined, size: 15),
+                    label: const Text('ویرایش موقعیت', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12)),
+                  ),
+                ],
               ),
             ],
             const SizedBox(height: 20),
