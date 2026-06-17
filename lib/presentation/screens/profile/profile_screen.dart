@@ -165,7 +165,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: 'رزروها',
             items: [
               _MenuItem(Icons.history, 'تاریخچه رزروها', () => Get.to(() => _BookingHistoryPage(userId: _user!.id))),
-              _MenuItem(Icons.star_outline, 'نظرات من', () => Get.to(() => _MyReviewsPage(userId: _user!.id))),
             ],
           ),
           _MenuSection(

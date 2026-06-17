@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong2.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/auth_controller.dart';
@@ -26,6 +28,7 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
   late final AuthController _auth;
   final List<XFile> _uploadedDocs = [];
   final _imagePicker = ImagePicker();
+  LatLng? _selectedLocation;
 
   @override
   void initState() {
@@ -270,6 +273,85 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () async {
+                    final result = await Get.toNamed(
+                      Routes.locationPicker,
+                      arguments: _selectedLocation,
+                    );
+                    if (result is LatLng) {
+                      setState(() => _selectedLocation = result);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _selectedLocation != null ? AppColors.secondary : Colors.white30),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.map_outlined,
+                          color: _selectedLocation != null ? AppColors.secondary : Colors.white54,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _selectedLocation != null
+                                ? 'موقعیت انتخاب شد: ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}'
+                                : 'انتخاب موقعیت روی نقشه (اختیاری)',
+                            style: TextStyle(
+                              fontFamily: 'Vazirmatn',
+                              fontSize: 13,
+                              color: _selectedLocation != null ? AppColors.secondary : Colors.white54,
+                            ),
+                          ),
+                        ),
+                        if (_selectedLocation != null)
+                          GestureDetector(
+                            onTap: () => setState(() => _selectedLocation = null),
+                            child: const Icon(Icons.close, color: Colors.white54, size: 18),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_selectedLocation != null) ...[
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 150,
+                      child: FlutterMap(
+                        options: MapOptions(
+                          initialCenter: _selectedLocation!,
+                          initialZoom: 14,
+                          interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.example.barberbook',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: _selectedLocation!,
+                                width: 40,
+                                height: 40,
+                                child: const Icon(Icons.location_pin, color: Colors.red, size: 40),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),

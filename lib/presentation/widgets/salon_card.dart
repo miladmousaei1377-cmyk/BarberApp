@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../app/theme/app_theme.dart';
 import '../../data/models/salon_model.dart';
@@ -201,13 +202,19 @@ class SalonCard extends StatelessWidget {
   }
 
   Widget _buildCoverImage({required double height}) {
-    return Container(
+    return SizedBox(
       height: height,
-      color: AppColors.primary.withOpacity(0.1),
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _SalonPlaceholderImage(salonId: salon.id),
+          if (salon.images.isNotEmpty)
+            Image.file(
+              File(salon.images.first),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _SalonPlaceholderImage(salonId: salon.id),
+            )
+          else
+            _SalonPlaceholderImage(salonId: salon.id),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
