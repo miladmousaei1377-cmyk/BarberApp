@@ -5,6 +5,7 @@ import '../../../app/theme/app_theme.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/storage/storage_service.dart';
+import '../../../data/mock/mock_data.dart';
 
 class CustomerLoginScreen extends StatefulWidget {
   const CustomerLoginScreen({super.key});
@@ -37,11 +38,22 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
   Future<void> _loginWithBiometric() async {
     final ok = await BiometricService.authenticate();
     if (!ok || !mounted) return;
-    if (StorageService.isLoggedIn) {
-      Get.offAllNamed(Routes.main);
-    } else {
+    final userId = StorageService.biometricUserId;
+    if (userId == null) {
       Get.snackbar('توجه', 'لطفاً ابتدا با رمز عبور وارد شوید',
           backgroundColor: AppColors.secondary.withOpacity(0.9),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    try {
+      final user = MockData.users.firstWhere((u) => u.id == userId);
+      await StorageService.saveToken('bio_${user.id}');
+      await StorageService.saveUser(user);
+      Get.offAllNamed(Routes.main);
+    } catch (_) {
+      Get.snackbar('خطا', 'اطلاعات کاربری یافت نشد. لطفاً با رمز عبور وارد شوید.',
+          backgroundColor: AppColors.error,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);
     }

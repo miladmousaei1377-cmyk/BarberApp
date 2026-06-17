@@ -38,6 +38,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (value) {
       final ok = await BiometricService.authenticate();
       if (!ok) return;
+      await StorageService.setBiometricUserId(StorageService.getUser()?.id);
+    } else {
+      await StorageService.setBiometricUserId(null);
     }
     await StorageService.setBiometricEnabled(value);
     setState(() => _biometricEnabled = value);

@@ -44,6 +44,16 @@ class StorageService {
     await _prefs.setBool(_keyBiometric, value);
   }
 
+  static const _keyBiometricUserId = 'biometric_user_id';
+  static String? get biometricUserId => _prefs.getString(_keyBiometricUserId);
+  static Future<void> setBiometricUserId(String? id) async {
+    if (id == null) {
+      await _prefs.remove(_keyBiometricUserId);
+    } else {
+      await _prefs.setString(_keyBiometricUserId, id);
+    }
+  }
+
   static const _keyCity = 'selected_city';
 
   static String? get selectedCity => _prefs.getString(_keyCity);

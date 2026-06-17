@@ -16,10 +16,12 @@ import '../../../core/services/biometric_service.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/utils/persian_utils.dart';
 import '../../../data/mock/mock_data.dart';
+import '../../../core/storage/data_service.dart';
 import '../../../data/models/appointment_model.dart';
 import '../../../data/models/review_model.dart';
 import '../../../data/models/service_model.dart';
 import '../../../data/models/salon_model.dart';
+import '../../../data/models/stylist_model.dart';
 
 // ── Panel colours ─────────────────────────────────────────────────────────────
 const _kPrimary = Color(0xFF0F3460);
@@ -499,16 +501,16 @@ class _AppointmentsTabState extends State<_AppointmentsTab> with SingleTickerPro
       backgroundColor: _kBg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        foregroundColor: _kPrimary,
-        title: const Text('نوبت‌ها', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: _kPrimary)),
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('نوبت‌ها', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: Colors.white)),
         bottom: TabBar(
           controller: _tabCtrl,
-          indicatorColor: _kPrimary,
+          indicatorColor: Colors.white,
           labelStyle: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w600),
           unselectedLabelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
-          labelColor: _kPrimary,
-          unselectedLabelColor: Colors.grey,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
           tabs: const [Tab(text: 'امروز'), Tab(text: 'هفتگی'), Tab(text: 'همه')],
         ),
       ),
@@ -1598,15 +1600,15 @@ class _StatsTabState extends State<_StatsTab> {
       backgroundColor: _kBg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        foregroundColor: _kPrimary,
-        title: const Text('آمار و گزارشات', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: _kPrimary)),
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('آمار و گزارشات', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: Colors.white)),
         actions: [
-          Obx(() => IconButton(
-            icon: const Icon(Icons.download_outlined, color: _kPrimary),
+          IconButton(
+            icon: const Icon(Icons.download_outlined, color: Colors.white),
             tooltip: 'دریافت گزارش',
             onPressed: () => _showDownloadDialog(context, OwnerController.to),
-          )),
+          ),
         ],
       ),
       body: Obx(() {
@@ -1763,6 +1765,23 @@ class _OwnerProfileTabState extends State<_OwnerProfileTab> {
     await StorageService.saveUser(updated);
     final idx = MockData.users.indexWhere((x) => x.id == u.id);
     if (idx != -1) MockData.users[idx] = updated;
+    // Update the auto-created stylist's avatar too
+    final ctrl = OwnerController.to;
+    final salonId = ctrl.salon.value?.id;
+    if (salonId != null) {
+      final sIdx = MockData.stylists.indexWhere((st) => st.id == 'st_$salonId');
+      if (sIdx != -1) {
+        MockData.stylists[sIdx] = StylistModel(
+          id: MockData.stylists[sIdx].id,
+          salonId: MockData.stylists[sIdx].salonId,
+          name: MockData.stylists[sIdx].name,
+          avatar: picked.path,
+          specialty: MockData.stylists[sIdx].specialty,
+          rating: MockData.stylists[sIdx].rating,
+        );
+      }
+    }
+    DataService.saveAll();
     setState(() {});
   }
 
@@ -1775,9 +1794,9 @@ class _OwnerProfileTabState extends State<_OwnerProfileTab> {
       backgroundColor: _kBg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        foregroundColor: _kPrimary,
-        title: const Text('پروفایل', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: _kPrimary)),
+        backgroundColor: _kPrimary,
+        foregroundColor: Colors.white,
+        title: const Text('پروفایل', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: Colors.white)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -1855,6 +1874,9 @@ class _OwnerProfileTabState extends State<_OwnerProfileTab> {
                   if (v) {
                     final ok = await BiometricService.authenticate();
                     if (!ok) return;
+                    await StorageService.setBiometricUserId(StorageService.getUser()?.id);
+                  } else {
+                    await StorageService.setBiometricUserId(null);
                   }
                   await StorageService.setBiometricEnabled(v);
                   if (mounted) setState(() => _biometricEnabled = v);

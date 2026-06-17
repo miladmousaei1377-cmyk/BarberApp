@@ -165,14 +165,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<SalonModel> get _nearbySalons {
-    // Filter by selected city first
+    // When city selected, filter strictly — no fallback to other cities
     if (_selectedCity != null && _selectedCity!.isNotEmpty) {
-      final cityFiltered = MockData.salons
+      return MockData.salons
           .where((s) => s.address.contains(_selectedCity!))
           .toList();
-      if (cityFiltered.isNotEmpty) return cityFiltered;
     }
-    // Fallback to GPS distance
+    // No city selected — use GPS distance
     if (_userPosition != null) {
       const dist = Distance();
       final userLoc = LatLng(_userPosition!.latitude, _userPosition!.longitude);
@@ -360,49 +359,46 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 40,
-            child: ListView.separated(
+          Center(
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              reverse: true,
-              itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final (value, label) = _categories[i];
-                final isSelected = _selectedCategory == value;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedCategory = value),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.secondary : AppColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? AppColors.secondary : AppColors.divider,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: AppColors.secondary.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              )
-                            ]
-                          : [],
-                    ),
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: _categories.map((cat) {
+                  final value = cat.$1;
+                  final label = cat.$2;
+                  final isSelected = _selectedCategory == value;
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedCategory = value),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.secondary : AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected ? AppColors.secondary : AppColors.divider,
+                          ),
+                          boxShadow: isSelected
+                              ? [BoxShadow(color: AppColors.secondary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))]
+                              : [],
+                        ),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontFamily: 'Vazirmatn',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? Colors.white : AppColors.textSecondary,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                }).toList(),
+              ),
             ),
           ),
         ],

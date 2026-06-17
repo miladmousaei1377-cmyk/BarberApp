@@ -334,18 +334,27 @@ class _StylistsTab extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
+                    image: s.avatar != null
+                        ? DecorationImage(
+                            image: FileImage(File(s.avatar!)),
+                            fit: BoxFit.cover,
+                            onError: (_, __) {},
+                          )
+                        : null,
                   ),
-                  child: Center(
-                    child: Text(
-                      s.name.characters.first,
-                      style: const TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
+                  child: s.avatar == null
+                      ? Center(
+                          child: Text(
+                            s.name.characters.first,
+                            style: const TextStyle(
+                              fontFamily: 'Vazirmatn',
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 14),
                 Expanded(

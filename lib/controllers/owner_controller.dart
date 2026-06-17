@@ -68,6 +68,7 @@ class OwnerController extends GetxController {
         id: 'st_${s.id}',
         salonId: s.id,
         name: user.fullName,
+        avatar: user.avatarUrl,
         specialty: 'آرایشگر',
         rating: 5.0,
       ));
