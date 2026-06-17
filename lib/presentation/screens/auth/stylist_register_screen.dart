@@ -22,6 +22,7 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
   final _salonAddressCtrl = TextEditingController();
   bool _obscure = true;
   late final AuthController _auth;
+  final List<String> _uploadedDocs = [];
 
   @override
   void initState() {
@@ -41,6 +42,13 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
     _salonNameCtrl.dispose();
     _salonAddressCtrl.dispose();
     super.dispose();
+  }
+
+  void _addDocument() {
+    final docNames = ['پروانه کسب', 'کارت ملی', 'گواهینامه آرایشگری', 'مدرک فنی و حرفه‌ای'];
+    setState(() {
+      _uploadedDocs.add(docNames[_uploadedDocs.length % docNames.length]);
+    });
   }
 
   Future<void> _register() async {
@@ -155,6 +163,75 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                     if (v == null || v.trim().isEmpty) return 'کد صنفی الزامی است';
                     return null;
                   },
+                ),
+                const SizedBox(height: 24),
+                _SectionLabel(label: 'مدارک و تصاویر'),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'بارگذاری مدارک (اختیاری)',
+                        style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.white60),
+                      ),
+                      const SizedBox(height: 10),
+                      if (_uploadedDocs.isNotEmpty) ...[
+                        ...List.generate(_uploadedDocs.length, (i) => Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.description_outlined, color: Colors.white54, size: 18),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _uploadedDocs[i],
+                                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.white70),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => setState(() => _uploadedDocs.removeAt(i)),
+                                child: const Icon(Icons.close, color: Colors.redAccent, size: 18),
+                              ),
+                            ],
+                          ),
+                        )),
+                        const SizedBox(height: 8),
+                      ],
+                      if (_uploadedDocs.length < 5)
+                        GestureDetector(
+                          onTap: _addDocument,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white30, style: BorderStyle.solid),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.upload_file_outlined, color: Colors.white54, size: 20),
+                                SizedBox(width: 8),
+                                Text('افزودن مدرک', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.white54)),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 _SectionLabel(label: 'اطلاعات آرایشگاه'),

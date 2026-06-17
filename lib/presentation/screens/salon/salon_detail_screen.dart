@@ -531,6 +531,7 @@ class _InfoTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasLocation = salon.lat != 0.0 && salon.lng != 0.0;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -539,11 +540,19 @@ class _InfoTab extends StatelessWidget {
           icon: Icons.location_on_outlined,
           content: salon.address,
         ),
+        if (salon.phone != null && salon.phone!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _InfoCard(
+            title: 'شماره تلفن',
+            icon: Icons.phone_outlined,
+            content: salon.phone!,
+          ),
+        ],
         const SizedBox(height: 12),
         _InfoCard(
           title: 'ساعات کاری',
           icon: Icons.access_time,
-          content: 'شنبه تا پنجشنبه: ۹:۰۰ الی ۲۱:۰۰\nجمعه: ۱۰:۰۰ الی ۱۸:۰۰',
+          content: '${salon.openTime} الی ${salon.closeTime}',
         ),
         const SizedBox(height: 12),
         _InfoCard(
@@ -555,20 +564,27 @@ class _InfoTab extends StatelessWidget {
         Container(
           height: 200,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.05),
+            color: hasLocation ? Colors.teal.withOpacity(0.08) : AppColors.primary.withOpacity(0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.divider),
+            border: Border.all(color: hasLocation ? Colors.teal.withOpacity(0.3) : AppColors.divider),
           ),
-          child: const Center(
+          child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.map_outlined, color: AppColors.textSecondary, size: 48),
-                SizedBox(height: 8),
+                Icon(Icons.map_outlined, color: hasLocation ? Colors.teal : AppColors.textSecondary, size: 48),
+                const SizedBox(height: 8),
                 Text(
-                  'نقشه موقعیت مکانی',
-                  style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary),
+                  hasLocation ? 'موقعیت مکانی ثبت شده' : 'موقعیت مکانی ثبت نشده',
+                  style: TextStyle(fontFamily: 'Vazirmatn', color: hasLocation ? Colors.teal : AppColors.textSecondary),
                 ),
+                if (hasLocation) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'طول: ${salon.lat.toStringAsFixed(4)} | عرض: ${salon.lng.toStringAsFixed(4)}',
+                    style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
               ],
             ),
           ),

@@ -45,7 +45,7 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
     final ok = await _auth.registerCustomer(
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
-      email: _emailCtrl.text.trim(),
+      email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
       password: _passwordCtrl.text,
     );
     if (ok) Get.offAllNamed(Routes.main);
@@ -109,11 +109,11 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
                 const SizedBox(height: 14),
                 _AuthField(
                   controller: _emailCtrl,
-                  label: 'ایمیل',
+                  label: 'ایمیل (اختیاری)',
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'ایمیل الزامی است';
+                    if (v == null || v.trim().isEmpty) return null;
                     if (!v.contains('@')) return 'ایمیل نامعتبر است';
                     return null;
                   },

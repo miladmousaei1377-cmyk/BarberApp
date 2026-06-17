@@ -13,7 +13,7 @@ class CustomerLoginScreen extends StatefulWidget {
 
 class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
+  final _loginCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
   late final AuthController _auth;
@@ -26,7 +26,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
+    _loginCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
@@ -34,7 +34,7 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     final ok = await _auth.loginCustomer(
-      email: _emailCtrl.text.trim(),
+      emailOrPhone: _loginCtrl.text.trim(),
       password: _passwordCtrl.text,
     );
     if (ok) Get.offAllNamed(Routes.main);
@@ -71,18 +71,17 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'با ایمیل و رمز عبور وارد شوید',
+                  'با ایمیل یا شماره موبایل وارد شوید',
                   style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.white60),
                 ),
                 const SizedBox(height: 40),
                 _AuthField(
-                  controller: _emailCtrl,
-                  label: 'ایمیل',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
+                  controller: _loginCtrl,
+                  label: 'ایمیل یا شماره موبایل',
+                  icon: Icons.person_outline,
+                  keyboardType: TextInputType.text,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'ایمیل الزامی است';
-                    if (!v.contains('@')) return 'ایمیل نامعتبر است';
+                    if (v == null || v.trim().isEmpty) return 'ایمیل یا شماره موبایل الزامی است';
                     return null;
                   },
                 ),

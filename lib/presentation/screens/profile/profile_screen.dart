@@ -5,6 +5,8 @@ import '../../../app/theme/app_theme.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/utils/persian_utils.dart';
 import '../../../data/mock/mock_data.dart';
+import '../../../data/models/appointment_model.dart';
+import '../../../data/models/review_model.dart';
 import '../../../data/models/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -156,22 +158,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: 'حساب کاربری',
             items: [
               _MenuItem(Icons.person_outline, 'ویرایش پروفایل', () => _showEditProfile(context)),
-              _MenuItem(Icons.notifications_outlined, 'اعلان‌ها', () {}),
+              _MenuItem(Icons.notifications_outlined, 'اعلان‌ها', () => Get.to(() => const _NotificationsPage())),
             ],
           ),
           _MenuSection(
             title: 'رزروها',
             items: [
-              _MenuItem(Icons.history, 'تاریخچه رزروها', () {}),
-              _MenuItem(Icons.star_outline, 'نظرات من', () {}),
+              _MenuItem(Icons.history, 'تاریخچه رزروها', () => Get.to(() => _BookingHistoryPage(userId: _user!.id))),
+              _MenuItem(Icons.star_outline, 'نظرات من', () => Get.to(() => _MyReviewsPage(userId: _user!.id))),
             ],
           ),
           _MenuSection(
             title: 'پشتیبانی',
             items: [
-              _MenuItem(Icons.help_outline, 'راهنما', () {}),
-              _MenuItem(Icons.chat_outlined, 'پشتیبانی', () {}),
-              _MenuItem(Icons.info_outline, 'درباره آراپوینت', () {}),
+              _MenuItem(Icons.help_outline, 'راهنما', () => Get.to(() => const _HelpPage())),
+              _MenuItem(Icons.chat_outlined, 'پشتیبانی', () => Get.to(() => const _SupportPage())),
+              _MenuItem(Icons.info_outline, 'درباره آراپوینت', () => Get.to(() => const _AboutPage())),
             ],
           ),
           const SizedBox(height: 8),
@@ -192,14 +194,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Center(
+          const Center(
             child: Text(
               'آراپوینت نسخه ۱.۰.۰',
-              style: const TextStyle(
-                fontFamily: 'Vazirmatn',
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary),
             ),
           ),
           const SizedBox(height: 24),
@@ -210,6 +208,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showEditProfile(BuildContext context) {
     final nameController = TextEditingController(text: _user?.fullName);
+    final phoneController = TextEditingController(text: _user?.phone);
+    final emailController = TextEditingController(text: _user?.email ?? '');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -228,19 +228,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const Text(
               'ویرایش پروفایل',
-              style: TextStyle(
-                fontFamily: 'Vazirmatn',
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: nameController,
               textDirection: TextDirection.rtl,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'نام و نام خانوادگی',
-                labelStyle: TextStyle(fontFamily: 'Vazirmatn'),
+                labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                prefixIcon: const Icon(Icons.person_outline),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              style: const TextStyle(fontFamily: 'Vazirmatn'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              textDirection: TextDirection.rtl,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: 'شماره موبایل',
+                labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                prefixIcon: const Icon(Icons.phone_outlined),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              style: const TextStyle(fontFamily: 'Vazirmatn'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: emailController,
+              textDirection: TextDirection.rtl,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: 'ایمیل (اختیاری)',
+                labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               style: const TextStyle(fontFamily: 'Vazirmatn'),
             ),
@@ -250,7 +274,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: ElevatedButton(
                 onPressed: () async {
                   if (nameController.text.trim().length >= 2) {
-                    final updated = _user!.copyWith(fullName: nameController.text.trim());
+                    final updated = _user!.copyWith(
+                      fullName: nameController.text.trim(),
+                      phone: phoneController.text.trim().isEmpty ? _user!.phone : phoneController.text.trim(),
+                      email: emailController.text.trim().isEmpty ? null : emailController.text.trim().toLowerCase(),
+                    );
                     await StorageService.saveUser(updated);
                     setState(() => _user = updated);
                     Navigator.pop(context);
@@ -287,11 +315,7 @@ class _StatItem extends StatelessWidget {
         ),
         Text(
           label,
-          style: const TextStyle(
-            fontFamily: 'Vazirmatn',
-            fontSize: 12,
-            color: Colors.white60,
-          ),
+          style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.white60),
         ),
       ],
     );
@@ -313,12 +337,7 @@ class _MenuSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             title,
-            style: const TextStyle(
-              fontFamily: 'Vazirmatn',
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
-            ),
+            style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
           ),
         ),
         Container(
@@ -326,9 +345,7 @@ class _MenuSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2)),
-            ],
+            boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2))],
           ),
           child: Column(
             children: items.asMap().entries.map((e) {
@@ -338,20 +355,12 @@ class _MenuSection extends StatelessWidget {
                 children: [
                   ListTile(
                     leading: Icon(item.icon, color: AppColors.primary, size: 22),
-                    title: Text(
-                      item.label,
-                      style: const TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
+                    title: Text(item.label, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: AppColors.textPrimary)),
                     trailing: const Icon(Icons.chevron_left, color: AppColors.textSecondary, size: 20),
                     onTap: item.onTap,
                     dense: true,
                   ),
-                  if (!isLast)
-                    const Divider(height: 1, indent: 56, color: AppColors.divider),
+                  if (!isLast) const Divider(height: 1, indent: 56, color: AppColors.divider),
                 ],
               );
             }).toList(),
@@ -368,4 +377,524 @@ class _MenuItem {
   final VoidCallback onTap;
 
   _MenuItem(this.icon, this.label, this.onTap);
+}
+
+// ── Sub-pages ──────────────────────────────────────────────
+
+class _NotificationsPage extends StatelessWidget {
+  const _NotificationsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('اعلان‌ها'),
+        leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Get.back()),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.notifications_none_outlined, size: 72, color: AppColors.textSecondary.withOpacity(0.4)),
+            const SizedBox(height: 16),
+            const Text('هیچ اعلانی ندارید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
+            const Text('اعلان‌های جدید اینجا نمایش داده می‌شوند', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BookingHistoryPage extends StatelessWidget {
+  final String userId;
+
+  const _BookingHistoryPage({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    final appointments = MockData.getAppointmentsByUser(userId);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('تاریخچه رزروها'),
+        leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Get.back()),
+      ),
+      body: appointments.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.calendar_today_outlined, size: 72, color: AppColors.textSecondary.withOpacity(0.4)),
+                  const SizedBox(height: 16),
+                  const Text('هیچ رزروی ندارید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, color: AppColors.textSecondary)),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: appointments.length,
+              itemBuilder: (_, i) => _AppointmentCard(appointment: appointments[i]),
+            ),
+    );
+  }
+}
+
+class _AppointmentCard extends StatelessWidget {
+  final AppointmentModel appointment;
+
+  const _AppointmentCard({required this.appointment});
+
+  Color get _statusColor {
+    switch (appointment.status) {
+      case AppointmentStatus.pending:
+        return Colors.orange;
+      case AppointmentStatus.confirmed:
+        return Colors.blue;
+      case AppointmentStatus.done:
+        return Colors.green;
+      case AppointmentStatus.cancelled:
+        return Colors.red;
+    }
+  }
+
+  String get _statusLabel {
+    switch (appointment.status) {
+      case AppointmentStatus.pending:
+        return 'در انتظار';
+      case AppointmentStatus.confirmed:
+        return 'تأیید شده';
+      case AppointmentStatus.done:
+        return 'انجام شده';
+      case AppointmentStatus.cancelled:
+        return 'لغو شده';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(color: _statusColor.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(Icons.content_cut, color: _statusColor, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appointment.serviceName,
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${PersianUtils.gregorianToJalali(appointment.date)} | ${appointment.startTime}',
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: _statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(_statusLabel, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: _statusColor, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MyReviewsPage extends StatelessWidget {
+  final String userId;
+
+  const _MyReviewsPage({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    final reviews = MockData.reviews.where((r) => r.userId == userId).toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('نظرات من'),
+        leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Get.back()),
+      ),
+      body: reviews.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.rate_review_outlined, size: 72, color: AppColors.textSecondary.withOpacity(0.4)),
+                  const SizedBox(height: 16),
+                  const Text('هنوز نظری ثبت نکرده‌اید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, color: AppColors.textSecondary)),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: reviews.length,
+              itemBuilder: (_, i) => _ReviewCard(review: reviews[i]),
+            ),
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final ReviewModel review;
+
+  const _ReviewCard({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  PersianUtils.getTimeAgo(review.createdAt),
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ),
+              Row(
+                children: List.generate(5, (i) => Icon(
+                  i < review.rating ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: Colors.amber,
+                  size: 16,
+                )),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(review.comment, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textPrimary, height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelpPage extends StatelessWidget {
+  const _HelpPage();
+
+  static const _faqs = [
+    ('چطور نوبت رزرو کنم؟', 'از صفحه اصلی یک آرایشگاه انتخاب کرده، سپس روی دکمه «رزرو نوبت» کلیک کنید. تاریخ، ساعت و خدمت مورد نظر را انتخاب و نوبت خود را تأیید کنید.'),
+    ('چطور نوبت را لغو کنم؟', 'از بخش «تاریخچه رزروها» در پروفایل، نوبت مورد نظر را انتخاب کرده و گزینه لغو را بزنید.'),
+    ('چطور آرایشگاه مورد نظرم را پیدا کنم؟', 'از صفحه اصلی می‌توانید آرایشگاه‌ها را بر اساس دسته‌بندی (مردانه/زنانه) فیلتر کنید.'),
+    ('آیا می‌توانم نظر بدهم؟', 'بله، پس از ورود به صفحه آرایشگاه، در تب «نظرات» می‌توانید نظر و امتیاز خود را ثبت کنید.'),
+    ('رمز عبور را فراموش کرده‌ام، چه کنم؟', 'از صفحه ورود روی «فراموشی رمز عبور» کلیک کرده و از طریق ایمیل یا شماره موبایل رمز جدید تعریف کنید.'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('راهنما'),
+        leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Get.back()),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.help_center_outlined, color: AppColors.secondary, size: 32),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'پرسش‌های متداول',
+                    style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ..._faqs.map((faq) => _FaqItem(question: faq.$1, answer: faq.$2)),
+        ],
+      ),
+    );
+  }
+}
+
+class _FaqItem extends StatefulWidget {
+  final String question;
+  final String answer;
+
+  const _FaqItem({required this.question, required this.answer});
+
+  @override
+  State<_FaqItem> createState() => _FaqItemState();
+}
+
+class _FaqItemState extends State<_FaqItem> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(widget.question, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            trailing: AnimatedRotation(
+              duration: const Duration(milliseconds: 200),
+              turns: _expanded ? 0.5 : 0,
+              child: const Icon(Icons.keyboard_arrow_down, color: AppColors.secondary),
+            ),
+            onTap: () => setState(() => _expanded = !_expanded),
+          ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(
+                widget.answer,
+                style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary, height: 1.6),
+                textDirection: TextDirection.rtl,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SupportPage extends StatelessWidget {
+  const _SupportPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('پشتیبانی'),
+        leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Get.back()),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 6, offset: const Offset(0, 2))],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(color: AppColors.secondary.withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.support_agent_outlined, color: AppColors.secondary, size: 36),
+                ),
+                const SizedBox(height: 16),
+                const Text('تیم پشتیبانی آراپوینت', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                const SizedBox(height: 8),
+                const Text('ما اینجاییم تا کمک کنیم!', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _SupportItem(icon: Icons.phone_outlined, title: 'تلفن پشتیبانی', subtitle: '۰۲۱-۱۲۳۴۵۶۷۸', color: Colors.green),
+          const SizedBox(height: 12),
+          _SupportItem(icon: Icons.email_outlined, title: 'ایمیل پشتیبانی', subtitle: 'support@arapoint.ir', color: Colors.blue),
+          const SizedBox(height: 12),
+          _SupportItem(icon: Icons.chat_bubble_outline, title: 'چت آنلاین', subtitle: 'شنبه تا پنجشنبه ۹ تا ۱۸', color: Colors.purple),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.orange.withOpacity(0.2)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.access_time_outlined, color: Colors.orange, size: 18),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'ساعت پاسخگویی: شنبه تا پنجشنبه ۸:۰۰ الی ۲۰:۰۰',
+                    style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textPrimary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SupportItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+
+  const _SupportItem({required this.icon, required this.title, required this.subtitle, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                Text(subtitle, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_left, color: AppColors.textSecondary.withOpacity(0.5)),
+        ],
+      ),
+    );
+  }
+}
+
+class _AboutPage extends StatelessWidget {
+  const _AboutPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('درباره آراپوینت'),
+        leading: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: () => Get.back()),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 20),
+          Center(
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 6))],
+              ),
+              child: const Center(
+                child: Icon(Icons.content_cut, color: AppColors.secondary, size: 48),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Center(
+            child: Text('آراپوینت', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+          ),
+          const SizedBox(height: 6),
+          const Center(
+            child: Text('نسخه ۱.۰.۰', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: AppColors.textSecondary)),
+          ),
+          const SizedBox(height: 32),
+          _AboutSection(
+            title: 'معرفی اپلیکیشن',
+            content: 'آراپوینت یک پلتفرم نوبت‌دهی هوشمند برای آرایشگاه‌ها است که ارتباط میان مشتریان و آرایشگران را آسان‌تر می‌کند. با آراپوینت به راحتی نوبت خود را رزرو کنید و از خدمات بهترین آرایشگاه‌ها بهره‌مند شوید.',
+          ),
+          const SizedBox(height: 16),
+          _AboutSection(
+            title: 'تماس با ما',
+            content: 'وب‌سایت: arapoint.ir\nایمیل: info@arapoint.ir\nتلفن: ۰۲۱-۱۲۳۴۵۶۷۸',
+          ),
+          const SizedBox(height: 16),
+          _AboutSection(
+            title: 'حقوق قانونی',
+            content: '© ۱۴۰۳ آراپوینت. تمامی حقوق محفوظ است.',
+          ),
+          const SizedBox(height: 32),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            alignment: Alignment.center,
+            child: const Text(
+              'ساخته شده با ❤️ برای آرایشگران و مشتریان ایرانی',
+              style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AboutSection extends StatelessWidget {
+  final String title;
+  final String content;
+
+  const _AboutSection({required this.title, required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: AppColors.cardShadow, blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          const SizedBox(height: 8),
+          Text(content, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary, height: 1.7), textDirection: TextDirection.rtl),
+        ],
+      ),
+    );
+  }
 }

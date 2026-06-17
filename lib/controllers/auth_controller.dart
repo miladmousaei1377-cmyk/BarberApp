@@ -11,18 +11,23 @@ class AuthController extends GetxController {
   final isLoading = false.obs;
   final errorMsg = ''.obs;
 
-  Future<bool> loginCustomer({required String email, required String password}) async {
+  Future<bool> loginCustomer({required String emailOrPhone, required String password}) async {
     isLoading.value = true;
     errorMsg.value = '';
     await Future.delayed(const Duration(milliseconds: 700));
 
-    final matches = MockData.users.where(
-      (u) => u.email?.toLowerCase() == email.trim().toLowerCase() && u.role == UserRole.customer,
-    ).toList();
+    final input = emailOrPhone.trim();
+    final isEmail = input.contains('@');
+    final matches = MockData.users.where((u) {
+      if (u.role != UserRole.customer) return false;
+      return isEmail
+          ? u.email?.toLowerCase() == input.toLowerCase()
+          : u.phone == input;
+    }).toList();
 
     if (matches.isEmpty || matches.first.password != password) {
       isLoading.value = false;
-      errorMsg.value = 'ایمیل یا رمز عبور اشتباه است';
+      errorMsg.value = 'اطلاعات وارد شده اشتباه است';
       return false;
     }
 
@@ -36,24 +41,33 @@ class AuthController extends GetxController {
   Future<bool> registerCustomer({
     required String name,
     required String phone,
-    required String email,
+    String? email,
     required String password,
   }) async {
     isLoading.value = true;
     errorMsg.value = '';
     await Future.delayed(const Duration(milliseconds: 700));
 
-    if (MockData.users.any((u) => u.email?.toLowerCase() == email.trim().toLowerCase())) {
+    if (MockData.users.any((u) => u.phone == phone.trim())) {
       isLoading.value = false;
-      errorMsg.value = 'این ایمیل قبلاً ثبت شده است';
+      errorMsg.value = 'این شماره موبایل قبلاً ثبت شده است';
       return false;
+    }
+
+    final trimmedEmail = email?.trim();
+    if (trimmedEmail != null && trimmedEmail.isNotEmpty) {
+      if (MockData.users.any((u) => u.email?.toLowerCase() == trimmedEmail.toLowerCase())) {
+        isLoading.value = false;
+        errorMsg.value = 'این ایمیل قبلاً ثبت شده است';
+        return false;
+      }
     }
 
     final user = UserModel(
       id: 'u_${DateTime.now().millisecondsSinceEpoch}',
       fullName: name.trim(),
       phone: phone.trim(),
-      email: email.trim().toLowerCase(),
+      email: (trimmedEmail != null && trimmedEmail.isNotEmpty) ? trimmedEmail.toLowerCase() : null,
       password: password,
       role: UserRole.customer,
       createdAt: DateTime.now(),
@@ -65,18 +79,23 @@ class AuthController extends GetxController {
     return true;
   }
 
-  Future<StylistLoginResult> loginStylist({required String email, required String password}) async {
+  Future<StylistLoginResult> loginStylist({required String emailOrPhone, required String password}) async {
     isLoading.value = true;
     errorMsg.value = '';
     await Future.delayed(const Duration(milliseconds: 700));
 
-    final matches = MockData.users.where(
-      (u) => u.email?.toLowerCase() == email.trim().toLowerCase() && u.role == UserRole.barber,
-    ).toList();
+    final input = emailOrPhone.trim();
+    final isEmail = input.contains('@');
+    final matches = MockData.users.where((u) {
+      if (u.role != UserRole.barber) return false;
+      return isEmail
+          ? u.email?.toLowerCase() == input.toLowerCase()
+          : u.phone == input;
+    }).toList();
 
     if (matches.isEmpty || matches.first.password != password) {
       isLoading.value = false;
-      errorMsg.value = 'ایمیل یا رمز عبور اشتباه است';
+      errorMsg.value = 'اطلاعات وارد شده اشتباه است';
       return StylistLoginResult.failed;
     }
 
@@ -100,6 +119,12 @@ class AuthController extends GetxController {
     isLoading.value = true;
     errorMsg.value = '';
     await Future.delayed(const Duration(milliseconds: 900));
+
+    if (MockData.users.any((u) => u.phone == phone.trim())) {
+      isLoading.value = false;
+      errorMsg.value = 'این شماره موبایل قبلاً ثبت شده است';
+      return false;
+    }
 
     if (MockData.users.any((u) => u.email?.toLowerCase() == email.trim().toLowerCase())) {
       isLoading.value = false;

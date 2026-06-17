@@ -13,7 +13,7 @@ class StylistLoginScreen extends StatefulWidget {
 
 class _StylistLoginScreenState extends State<StylistLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
+  final _loginCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
   late final AuthController _auth;
@@ -26,7 +26,7 @@ class _StylistLoginScreenState extends State<StylistLoginScreen> {
 
   @override
   void dispose() {
-    _emailCtrl.dispose();
+    _loginCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
@@ -34,7 +34,7 @@ class _StylistLoginScreenState extends State<StylistLoginScreen> {
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     final result = await _auth.loginStylist(
-      email: _emailCtrl.text.trim(),
+      emailOrPhone: _loginCtrl.text.trim(),
       password: _passwordCtrl.text,
     );
     switch (result) {
@@ -85,13 +85,12 @@ class _StylistLoginScreenState extends State<StylistLoginScreen> {
                 ),
                 const SizedBox(height: 40),
                 _AuthField(
-                  controller: _emailCtrl,
-                  label: 'ایمیل',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
+                  controller: _loginCtrl,
+                  label: 'ایمیل یا شماره موبایل',
+                  icon: Icons.person_outline,
+                  keyboardType: TextInputType.text,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'ایمیل الزامی است';
-                    if (!v.contains('@')) return 'ایمیل نامعتبر است';
+                    if (v == null || v.trim().isEmpty) return 'ایمیل یا شماره موبایل الزامی است';
                     return null;
                   },
                 ),

@@ -649,6 +649,59 @@ class _SalonInfoSubTab extends StatelessWidget {
             subtitle: salon.address,
             onTap: () => _showEditSalonSheet(context, salon),
           ),
+          if (salon.phone != null && salon.phone!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: _kSurface, borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                children: [
+                  const Icon(Icons.phone_outlined, color: _kPrimary, size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('شماره تلفن', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(salon.phone!, style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (salon.lat != 0.0 && salon.lng != 0.0) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.teal.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.teal.withOpacity(0.25)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(color: Colors.teal.withOpacity(0.15), shape: BoxShape.circle),
+                    child: const Icon(Icons.location_pin, color: Colors.teal, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('موقعیت مکانی ثبت شده', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: Colors.teal)),
+                        Text('طول: ${salon.lat.toStringAsFixed(4)} | عرض: ${salon.lng.toStringAsFixed(4)}', style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.black54)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           _SectionHeader(title: 'ساعت کاری', icon: Icons.schedule),
           const SizedBox(height: 8),

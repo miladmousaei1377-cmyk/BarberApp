@@ -15,6 +15,7 @@ class BarberRegisterScreen extends StatefulWidget {
 class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _descController = TextEditingController();
 
@@ -23,13 +24,106 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   TimeOfDay _endTime = const TimeOfDay(hour: 21, minute: 0);
   bool _isLoading = false;
   int _imageCount = 0;
+  bool _locationEnabled = false;
+  double _lat = 35.7448;
+  double _lng = 51.4100;
+
+  static const _tehranAreas = [
+    {'name': 'ولیعصر', 'lat': 35.7448, 'lng': 51.4100},
+    {'name': 'انقلاب', 'lat': 35.7001, 'lng': 51.3877},
+    {'name': 'میدان آزادی', 'lat': 35.6996, 'lng': 51.3376},
+    {'name': 'شریعتی', 'lat': 35.7591, 'lng': 51.4339},
+    {'name': 'نیاوران', 'lat': 35.8108, 'lng': 51.4638},
+    {'name': 'تجریش', 'lat': 35.8063, 'lng': 51.4309},
+  ];
 
   @override
   void dispose() {
     _nameController.dispose();
+    _phoneController.dispose();
     _addressController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickLocation() async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('انتخاب موقعیت مکانی', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, fontSize: 16)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  height: 120,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [Colors.teal.shade700, Colors.teal.shade400]),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.map_outlined, color: Colors.white, size: 40),
+                        SizedBox(height: 6),
+                        Text('نقشه تهران', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.white70, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text('یک منطقه را انتخاب کنید:', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _tehranAreas.map((area) {
+                    final isSelected = _lat == area['lat'] && _lng == area['lng'];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _lat = area['lat'] as double;
+                          _lng = area['lng'] as double;
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.secondary.withOpacity(0.15) : AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: isSelected ? AppColors.secondary : AppColors.divider),
+                        ),
+                        child: Text(
+                          area['name'] as String,
+                          style: TextStyle(
+                            fontFamily: 'Vazirmatn',
+                            fontSize: 13,
+                            color: isSelected ? AppColors.secondary : AppColors.textPrimary,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _formatTime(TimeOfDay t) {
@@ -72,14 +166,17 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
           ? 'آرایشگاه ${_nameController.text.trim()}'
           : _descController.text.trim(),
       address: _addressController.text.trim(),
-      lat: 35.7448,
-      lng: 51.4100,
+      lat: _locationEnabled ? _lat : 0.0,
+      lng: _locationEnabled ? _lng : 0.0,
       rating: 5.0,
       reviewCount: 0,
       isVerified: false,
       category: _selectedCategory,
       ownerId: user?.id ?? 'unknown',
       images: const [],
+      phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+      openTime: _formatTime(_startTime),
+      closeTime: _formatTime(_endTime),
     );
 
     OwnerController.to.registerSalon(salon);
@@ -160,6 +257,20 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 16),
+            // Phone
+            TextFormField(
+              controller: _phoneController,
+              textDirection: TextDirection.rtl,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 15),
+              decoration: InputDecoration(
+                labelText: 'شماره تلفن (اختیاری)',
+                labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textSecondary),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
             const SizedBox(height: 16),
             // Address
@@ -308,6 +419,74 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
+            const SizedBox(height: 20),
+            // Optional location
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'موقعیت مکانی',
+                        style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                      ),
+                      const Text(
+                        'اختیاری',
+                        style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _locationEnabled,
+                  onChanged: (v) => setState(() => _locationEnabled = v),
+                  activeColor: AppColors.secondary,
+                ),
+              ],
+            ),
+            if (_locationEnabled) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: _pickLocation,
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.secondary.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [Colors.teal.shade700, Colors.teal.shade400]),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.location_pin, color: Colors.white, size: 26),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('موقعیت انتخاب شده', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary)),
+                            const SizedBox(height: 2),
+                            Text(
+                              'طول: ${_lat.toStringAsFixed(4)} | عرض: ${_lng.toStringAsFixed(4)}',
+                              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.edit_location_alt_outlined, color: AppColors.secondary, size: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             // Images section
             const Text(
