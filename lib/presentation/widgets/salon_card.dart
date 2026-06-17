@@ -42,7 +42,9 @@ class SalonCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: _buildCoverImage(height: 180),
+              child: salon.images.length > 1
+                  ? _SalonImageSlideshow(images: salon.images, height: 180)
+                  : _buildCoverImage(height: 180),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -238,6 +240,69 @@ class SalonCard extends StatelessWidget {
       case SalonCategory.unisex:
         return Colors.purple;
     }
+  }
+}
+
+class _SalonImageSlideshow extends StatefulWidget {
+  final List<String> images;
+  final double height;
+  const _SalonImageSlideshow({required this.images, required this.height});
+
+  @override
+  State<_SalonImageSlideshow> createState() => _SalonImageSlideshowState();
+}
+
+class _SalonImageSlideshowState extends State<_SalonImageSlideshow> {
+  int _index = 0;
+  final _pageCtrl = PageController();
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: widget.height,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          PageView.builder(
+            controller: _pageCtrl,
+            itemCount: widget.images.length,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemBuilder: (_, i) => Image.file(
+              File(widget.images[i]),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: Colors.grey.shade300,
+                child: const Icon(Icons.broken_image, color: Colors.grey, size: 48),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 8,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(widget.images.length, (i) => AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: i == _index ? 18 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: i == _index ? AppColors.secondary : Colors.white70,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              )),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

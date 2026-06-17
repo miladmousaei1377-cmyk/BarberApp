@@ -193,6 +193,11 @@ class MockData {
     return appointment;
   }
 
+  static void deleteAppointment(String appointmentId) {
+    appointments.removeWhere((a) => a.id == appointmentId);
+    onDataChanged?.call();
+  }
+
   static bool cancelAppointment(String appointmentId, {String? reason}) {
     final idx = appointments.indexWhere((a) => a.id == appointmentId);
     if (idx == -1) return false;

@@ -306,16 +306,6 @@ class _StylistsTab extends StatelessWidget {
 
   const _StylistsTab({required this.stylists});
 
-  void _showProfile(BuildContext context, StylistModel s) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => _StylistProfileSheet(stylist: s),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (stylists.isEmpty) {
@@ -326,9 +316,7 @@ class _StylistsTab extends StatelessWidget {
       itemCount: stylists.length,
       itemBuilder: (_, i) {
         final s = stylists[i];
-        return GestureDetector(
-          onTap: () => _showProfile(context, s),
-          child: Container(
+        return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -387,10 +375,8 @@ class _StylistsTab extends StatelessWidget {
                 ),
                 StarRating(rating: s.rating, showCount: false, size: 14),
                 const SizedBox(width: 4),
-                const Icon(Icons.chevron_left, color: AppColors.textSecondary, size: 18),
               ],
             ),
-          ),
         );
       },
     );

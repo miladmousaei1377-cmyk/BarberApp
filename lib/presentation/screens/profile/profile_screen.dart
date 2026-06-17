@@ -393,8 +393,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         password: newPassword ?? _user!.password,
                       );
                       await StorageService.saveUser(updated);
+                      final idx = MockData.users.indexWhere((x) => x.id == _user!.id);
+                      if (idx != -1) MockData.users[idx] = updated;
                       setState(() => _user = updated);
-                      if (mounted) Navigator.pop(context);
+                      if (!mounted) return;
+                      Navigator.pop(ctx);
+                      Get.snackbar('ذخیره شد', 'اطلاعات با موفقیت ذخیره شد', backgroundColor: AppColors.success, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+                      if (newPassword != null) {
+                        Get.offAllNamed(Routes.main);
+                      }
                     },
                     child: const Text('ذخیره', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
                   ),

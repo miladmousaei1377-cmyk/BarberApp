@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/auth_controller.dart';
+import '../../../core/services/biometric_service.dart';
+import '../../../core/storage/storage_service.dart';
 
 class CustomerLoginScreen extends StatefulWidget {
   const CustomerLoginScreen({super.key});
@@ -16,12 +18,33 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
   final _loginCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscure = true;
+  bool _biometricAvailable = false;
   late final AuthController _auth;
 
   @override
   void initState() {
     super.initState();
     _auth = Get.put(AuthController());
+    _checkBiometric();
+  }
+
+  Future<void> _checkBiometric() async {
+    if (!StorageService.biometricEnabled) return;
+    final avail = await BiometricService.isAvailable();
+    if (mounted) setState(() => _biometricAvailable = avail);
+  }
+
+  Future<void> _loginWithBiometric() async {
+    final ok = await BiometricService.authenticate();
+    if (!ok || !mounted) return;
+    if (StorageService.isLoggedIn) {
+      Get.offAllNamed(Routes.main);
+    } else {
+      Get.snackbar('توجه', 'لطفاً ابتدا با رمز عبور وارد شوید',
+          backgroundColor: AppColors.secondary.withOpacity(0.9),
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
   @override
@@ -153,6 +176,25 @@ class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
                           ),
                   ),
                 )),
+                if (_biometricAvailable) ...[
+                  const SizedBox(height: 16),
+                  Center(
+                    child: GestureDetector(
+                      onTap: _loginWithBiometric,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.fingerprint, color: AppColors.secondary, size: 52),
+                          SizedBox(height: 6),
+                          Text(
+                            'ورود با اثر انگشت',
+                            style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.secondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 28),
                 Row(
                   children: const [

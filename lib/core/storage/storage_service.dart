@@ -44,6 +44,14 @@ class StorageService {
     await _prefs.setBool(_keyBiometric, value);
   }
 
+  static const _keyCity = 'selected_city';
+
+  static String? get selectedCity => _prefs.getString(_keyCity);
+  static bool get hasCitySelected => _prefs.containsKey(_keyCity);
+  static Future<void> setSelectedCity(String city) async {
+    await _prefs.setString(_keyCity, city);
+  }
+
   /// Clears only auth data — does NOT reset onboarding flag.
   static Future<void> logout() async {
     await _prefs.remove(_keyToken);

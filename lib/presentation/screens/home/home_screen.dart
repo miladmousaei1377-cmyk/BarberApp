@@ -12,6 +12,13 @@ import '../../../data/models/salon_model.dart';
 import '../../widgets/salon_card.dart';
 import '../../widgets/loading_shimmer.dart';
 
+const _kIranCities = [
+  'تهران', 'مشهد', 'اصفهان', 'کرج', 'شیراز', 'تبریز', 'اهواز',
+  'قم', 'کرمانشاه', 'ارومیه', 'رشت', 'زاهدان', 'همدان', 'کرمان',
+  'یزد', 'اردبیل', 'بندر عباس', 'اراک', 'قزوین', 'سنندج',
+  'سمنان', 'گرگان', 'ساری', 'زنجان', 'بیرجند', 'خرم‌آباد',
+];
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -25,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   Position? _userPosition;
+  String? _selectedCity;
 
   final _categories = [
     ('all', 'همه'),
@@ -35,7 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedCity = StorageService.selectedCity;
     _loadUserLocation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!StorageService.hasCitySelected) {
+        _showCitySelector(firstTime: true);
+      }
+    });
   }
 
   Future<void> _loadUserLocation() async {
@@ -48,6 +62,93 @@ class _HomeScreenState extends State<HomeScreen> {
       final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low);
       if (mounted) setState(() => _userPosition = pos);
     } catch (_) {}
+  }
+
+  void _showCitySelector({bool firstTime = false}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) {
+        final searchCtrl = TextEditingController();
+        return StatefulBuilder(
+          builder: (ctx, setS) {
+            final query = searchCtrl.text.trim();
+            final filtered = query.isEmpty
+                ? _kIranCities
+                : _kIranCities.where((c) => c.contains(query)).toList();
+            return Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.location_city, color: AppColors.primary, size: 24),
+                            const SizedBox(width: 8),
+                            Text(
+                              firstTime ? 'شهر خود را انتخاب کنید' : 'تغییر شهر',
+                              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                            ),
+                          ],
+                        ),
+                        if (firstTime) ...[
+                          const SizedBox(height: 4),
+                          const Text('برای نمایش آرایشگاه‌های نزدیک شما', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: AppColors.textSecondary)),
+                        ],
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: searchCtrl,
+                          textDirection: TextDirection.rtl,
+                          style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'جستجوی شهر...',
+                            hintStyle: const TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary, fontSize: 13),
+                            prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          ),
+                          onChanged: (_) => setS(() {}),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 280,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) {
+                        final city = filtered[i];
+                        final isSelected = city == _selectedCity;
+                        return ListTile(
+                          title: Text(city, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal, color: isSelected ? AppColors.secondary : AppColors.textPrimary)),
+                          trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.secondary, size: 20) : null,
+                          onTap: () async {
+                            await StorageService.setSelectedCity(city);
+                            if (mounted) {
+                              setState(() => _selectedCity = city);
+                              Navigator.pop(ctx);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   List<SalonModel> get _filteredSalons {
@@ -64,15 +165,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<SalonModel> get _nearbySalons {
-    if (_userPosition == null) return MockData.salons.take(4).toList();
-    const dist = Distance();
-    final userLoc = LatLng(_userPosition!.latitude, _userPosition!.longitude);
-    final nearby = MockData.salons.where((s) {
-      if (s.lat == 0.0 && s.lng == 0.0) return false;
-      final km = dist.as(LengthUnit.Kilometer, userLoc, LatLng(s.lat, s.lng));
-      return km <= 10.0;
-    }).toList();
-    return nearby.isEmpty ? MockData.salons.take(4).toList() : nearby;
+    // Filter by selected city first
+    if (_selectedCity != null && _selectedCity!.isNotEmpty) {
+      final cityFiltered = MockData.salons
+          .where((s) => s.address.contains(_selectedCity!))
+          .toList();
+      if (cityFiltered.isNotEmpty) return cityFiltered;
+    }
+    // Fallback to GPS distance
+    if (_userPosition != null) {
+      const dist = Distance();
+      final userLoc = LatLng(_userPosition!.latitude, _userPosition!.longitude);
+      final nearby = MockData.salons.where((s) {
+        if (s.lat == 0.0 && s.lng == 0.0) return false;
+        final km = dist.as(LengthUnit.Kilometer, userLoc, LatLng(s.lat, s.lng));
+        return km <= 10.0;
+      }).toList();
+      if (nearby.isNotEmpty) return nearby;
+    }
+    return MockData.salons.take(4).toList();
   }
 
   @override
@@ -174,6 +285,30 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       actions: [
+        // City selector button
+        GestureDetector(
+          onTap: () => _showCitySelector(),
+          child: Container(
+            margin: const EdgeInsets.only(left: 8, top: 8, bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white30),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.location_city, color: Colors.white, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  _selectedCity ?? 'انتخاب شهر',
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
         IconButton(
           icon: const Icon(Icons.notifications_outlined, color: Colors.white),
           onPressed: () {},
@@ -211,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCategories() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 0, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -229,6 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 40,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
+              reverse: true,
               itemCount: _categories.length,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
@@ -276,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildNearbySection() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 0, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -284,9 +420,9 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Icon(Icons.near_me, color: AppColors.secondary, size: 20),
               const SizedBox(width: 8),
-              const Text(
-                'نزدیک شما',
-                style: TextStyle(
+              Text(
+                _selectedCity != null ? 'در $_selectedCity' : 'نزدیک شما',
+                style: const TextStyle(
                   fontFamily: 'Vazirmatn',
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -305,7 +441,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
             ],
           ),
           const SizedBox(height: 8),
@@ -313,7 +448,8 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 220,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(right: 0),
+              reverse: true,
+              padding: EdgeInsets.zero,
               itemCount: _nearbySalons.length,
               itemBuilder: (_, i) => FadeInRight(
                 delay: Duration(milliseconds: i * 100),

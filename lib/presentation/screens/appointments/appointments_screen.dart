@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/storage/storage_service.dart';
+import '../../../core/storage/data_service.dart';
 import '../../../data/mock/mock_data.dart';
 import '../../../data/models/appointment_model.dart';
 import '../../widgets/appointment_card.dart';
@@ -279,11 +280,52 @@ class _AppointmentList extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 12),
       itemCount: appointments.length,
-      itemBuilder: (_, i) => AppointmentCard(
-        appointment: appointments[i],
-        onCancel: onCancel != null ? () => onCancel!(appointments[i].id) : null,
-        onReview: onReview != null ? () => onReview!(appointments[i]) : null,
-      ),
+      itemBuilder: (_, i) {
+        final apt = appointments[i];
+        return Dismissible(
+          key: Key(apt.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 20),
+            child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+          ),
+          confirmDismiss: (_) => showDialog<bool>(
+            context: context,
+            builder: (ctx) => Directionality(
+              textDirection: TextDirection.rtl,
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: const Text('حذف رزرو', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                content: const Text('این رزرو از تاریخچه شما حذف می‌شود. آیا مطمئن هستید؟', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14)),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary))),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                    child: const Text('حذف', style: TextStyle(fontFamily: 'Vazirmatn')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          onDismissed: (_) {
+            MockData.deleteAppointment(apt.id);
+            DataService.saveAll();
+            Get.snackbar('حذف شد', 'رزرو از تاریخچه شما حذف شد', backgroundColor: AppColors.error, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+          },
+          child: AppointmentCard(
+            appointment: apt,
+            onCancel: onCancel != null ? () => onCancel!(apt.id) : null,
+            onReview: onReview != null ? () => onReview!(apt) : null,
+          ),
+        );
+      },
     );
   }
 }
