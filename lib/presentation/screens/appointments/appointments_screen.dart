@@ -63,39 +63,62 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   }
 
   void _cancelAppointment(String id) {
+    final reasonCtrl = TextEditingController();
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'لغو رزرو',
-          style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700),
-          textAlign: TextAlign.center,
-        ),
-        content: const Text(
-          'آیا مطمئن هستید که می‌خواهید این رزرو را لغو کنید؟',
-          style: TextStyle(fontFamily: 'Vazirmatn'),
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary)),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setInner) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text(
+              'لغو رزرو',
+              style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'آیا مطمئن هستید که می‌خواهید این رزرو را لغو کنید؟',
+                  style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: reasonCtrl,
+                  textDirection: TextDirection.rtl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'دلیل لغو (اختیاری)',
+                    hintStyle: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.all(10),
+                  ),
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  MockData.cancelAppointment(id);
+                  Navigator.of(ctx).pop();
+                  setState(() {});
+                  Get.snackbar('موفق', 'رزرو با موفقیت لغو شد',
+                      backgroundColor: AppColors.success,
+                      colorText: Colors.white,
+                      snackPosition: SnackPosition.BOTTOM);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                child: const Text('لغو رزرو', style: TextStyle(fontFamily: 'Vazirmatn')),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              MockData.cancelAppointment(id);
-              Get.back();
-              setState(() {});
-              Get.snackbar('موفق', 'رزرو با موفقیت لغو شد',
-                  backgroundColor: AppColors.success,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('لغو رزرو', style: TextStyle(fontFamily: 'Vazirmatn')),
-          ),
-        ],
+        ),
       ),
     );
   }

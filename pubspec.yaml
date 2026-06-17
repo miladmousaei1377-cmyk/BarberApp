@@ -27,6 +27,13 @@ dependencies:
   url_launcher: ^6.2.4
   geolocator: ^10.1.0
 
+  # Map
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+
+  # Image/File picker
+  image_picker: ^1.0.7
+
   # Icons
   cupertino_icons: ^1.0.6
 

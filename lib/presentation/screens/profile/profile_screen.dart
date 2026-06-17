@@ -207,9 +207,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showEditProfile(BuildContext context) {
-    final nameController = TextEditingController(text: _user?.fullName);
-    final phoneController = TextEditingController(text: _user?.phone);
-    final emailController = TextEditingController(text: _user?.email ?? '');
+    final nameCtrl = TextEditingController(text: _user?.fullName);
+    final phoneCtrl = TextEditingController(text: _user?.phone);
+    final emailCtrl = TextEditingController(text: _user?.email ?? '');
+    final currentPassCtrl = TextEditingController();
+    final newPassCtrl = TextEditingController();
+    final confirmPassCtrl = TextEditingController();
+    String? passError;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -217,77 +222,150 @@ class _ProfileScreenState extends State<ProfileScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          left: 24, right: 24, top: 24,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'ویرایش پروفایل',
-              style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setInner) => Padding(
+          padding: EdgeInsets.only(
+            left: 24, right: 24, top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'ویرایش پروفایل',
+                  style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameCtrl,
+                  textDirection: TextDirection.rtl,
+                  decoration: InputDecoration(
+                    labelText: 'نام و نام خانوادگی',
+                    labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  style: const TextStyle(fontFamily: 'Vazirmatn'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phoneCtrl,
+                  textDirection: TextDirection.rtl,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'شماره موبایل',
+                    labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  style: const TextStyle(fontFamily: 'Vazirmatn'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailCtrl,
+                  textDirection: TextDirection.rtl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'ایمیل (اختیاری)',
+                    labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  style: const TextStyle(fontFamily: 'Vazirmatn'),
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 8),
+                const Text(
+                  'تغییر رمز عبور',
+                  style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'در صورت عدم تغییر رمز، فیلدها را خالی بگذارید',
+                  style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: currentPassCtrl,
+                  obscureText: true,
+                  textDirection: TextDirection.rtl,
+                  decoration: InputDecoration(
+                    labelText: 'رمز عبور فعلی',
+                    labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  style: const TextStyle(fontFamily: 'Vazirmatn'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: newPassCtrl,
+                  obscureText: true,
+                  textDirection: TextDirection.rtl,
+                  decoration: InputDecoration(
+                    labelText: 'رمز عبور جدید',
+                    labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                    prefixIcon: const Icon(Icons.lock_open_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  style: const TextStyle(fontFamily: 'Vazirmatn'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmPassCtrl,
+                  obscureText: true,
+                  textDirection: TextDirection.rtl,
+                  decoration: InputDecoration(
+                    labelText: 'تکرار رمز عبور جدید',
+                    labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
+                    prefixIcon: const Icon(Icons.lock_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    errorText: passError,
+                  ),
+                  style: const TextStyle(fontFamily: 'Vazirmatn'),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (nameCtrl.text.trim().length < 2) return;
+                      String? newPassword;
+                      if (newPassCtrl.text.isNotEmpty) {
+                        if (currentPassCtrl.text != (_user?.password ?? '')) {
+                          setInner(() => passError = 'رمز عبور فعلی اشتباه است');
+                          return;
+                        }
+                        if (newPassCtrl.text.length < 6) {
+                          setInner(() => passError = 'رمز جدید باید حداقل ۶ کاراکتر باشد');
+                          return;
+                        }
+                        if (newPassCtrl.text != confirmPassCtrl.text) {
+                          setInner(() => passError = 'رمز عبور جدید با تکرار آن مطابقت ندارد');
+                          return;
+                        }
+                        newPassword = newPassCtrl.text;
+                      }
+                      setInner(() => passError = null);
+                      final updated = _user!.copyWith(
+                        fullName: nameCtrl.text.trim(),
+                        phone: phoneCtrl.text.trim().isEmpty ? _user!.phone : phoneCtrl.text.trim(),
+                        email: emailCtrl.text.trim().isEmpty ? null : emailCtrl.text.trim().toLowerCase(),
+                        password: newPassword ?? _user!.password,
+                      );
+                      await StorageService.saveUser(updated);
+                      setState(() => _user = updated);
+                      if (mounted) Navigator.pop(context);
+                    },
+                    child: const Text('ذخیره', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameController,
-              textDirection: TextDirection.rtl,
-              decoration: InputDecoration(
-                labelText: 'نام و نام خانوادگی',
-                labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
-                prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              style: const TextStyle(fontFamily: 'Vazirmatn'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: phoneController,
-              textDirection: TextDirection.rtl,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: 'شماره موبایل',
-                labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
-                prefixIcon: const Icon(Icons.phone_outlined),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              style: const TextStyle(fontFamily: 'Vazirmatn'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: emailController,
-              textDirection: TextDirection.rtl,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'ایمیل (اختیاری)',
-                labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
-                prefixIcon: const Icon(Icons.email_outlined),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              style: const TextStyle(fontFamily: 'Vazirmatn'),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  if (nameController.text.trim().length >= 2) {
-                    final updated = _user!.copyWith(
-                      fullName: nameController.text.trim(),
-                      phone: phoneController.text.trim().isEmpty ? _user!.phone : phoneController.text.trim(),
-                      email: emailController.text.trim().isEmpty ? null : emailController.text.trim().toLowerCase(),
-                    );
-                    await StorageService.saveUser(updated);
-                    setState(() => _user = updated);
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('ذخیره', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/auth_controller.dart';
@@ -22,7 +24,8 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
   final _salonAddressCtrl = TextEditingController();
   bool _obscure = true;
   late final AuthController _auth;
-  final List<String> _uploadedDocs = [];
+  final List<XFile> _uploadedDocs = [];
+  final _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -44,11 +47,14 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
     super.dispose();
   }
 
-  void _addDocument() {
-    final docNames = ['پروانه کسب', 'کارت ملی', 'گواهینامه آرایشگری', 'مدرک فنی و حرفه‌ای'];
-    setState(() {
-      _uploadedDocs.add(docNames[_uploadedDocs.length % docNames.length]);
-    });
+  Future<void> _addDocument() async {
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (picked != null) {
+      setState(() => _uploadedDocs.add(picked));
+    }
   }
 
   Future<void> _register() async {
@@ -192,12 +198,21 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.description_outlined, color: Colors.white54, size: 18),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: Image.file(
+                                  File(_uploadedDocs[i].path),
+                                  width: 36,
+                                  height: 36,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  _uploadedDocs[i],
+                                  _uploadedDocs[i].name,
                                   style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.white70),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               GestureDetector(

@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
 import '../../../core/storage/storage_service.dart';
@@ -23,7 +25,8 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 21, minute: 0);
   bool _isLoading = false;
-  int _imageCount = 0;
+  final List<XFile> _images = [];
+  final _imagePicker = ImagePicker();
   bool _locationEnabled = false;
   double _lat = 35.7448;
   double _lng = 51.4100;
@@ -44,6 +47,16 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
     _addressController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (picked != null) {
+      setState(() => _images.add(picked));
+    }
   }
 
   Future<void> _pickLocation() async {
@@ -499,23 +512,26 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  ...List.generate(_imageCount, (i) => Container(
+                  ...List.generate(_images.length, (i) => Container(
                     width: 90,
                     height: 90,
                     margin: const EdgeInsets.only(left: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.secondary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
                     ),
                     child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        const Center(child: Icon(Icons.image_outlined, color: AppColors.secondary, size: 32)),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(11),
+                          child: Image.file(File(_images[i].path), fit: BoxFit.cover),
+                        ),
                         Positioned(
                           top: 4,
                           right: 4,
                           child: GestureDetector(
-                            onTap: () => setState(() => _imageCount--),
+                            onTap: () => setState(() => _images.removeAt(i)),
                             child: Container(
                               width: 22,
                               height: 22,
@@ -527,9 +543,9 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                       ],
                     ),
                   )),
-                  if (_imageCount < 5)
+                  if (_images.length < 5)
                     GestureDetector(
-                      onTap: () => setState(() => _imageCount++),
+                      onTap: _pickImage,
                       child: Container(
                         width: 90,
                         height: 90,

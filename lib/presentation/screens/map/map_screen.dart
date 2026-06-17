@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
@@ -17,7 +19,10 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   SalonModel? _selectedSalon;
-  Position? _userPosition;
+  LatLng? _userLatLng;
+  final _mapController = MapController();
+
+  static const _tehranCenter = LatLng(35.7219, 51.3347);
 
   void _launchMaps(SalonModel salon) async {
     final url = Uri.parse('https://maps.google.com/?q=${salon.lat},${salon.lng}');
@@ -26,13 +31,11 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  Future<void> _requestLocationAndShow() async {
+  Future<void> _goToMyLocation() async {
     LocationPermission permission = await Geolocator.checkPermission();
-
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
-
     if (permission == LocationPermission.deniedForever ||
         permission == LocationPermission.denied) {
       if (mounted) {
@@ -49,13 +52,14 @@ class _MapScreenState extends State<MapScreen> {
       }
       return;
     }
-
     try {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      final latLng = LatLng(position.latitude, position.longitude);
       if (mounted) {
-        setState(() => _userPosition = position);
+        setState(() => _userLatLng = latLng);
+        _mapController.move(latLng, 14);
       }
     } catch (_) {
       if (mounted) {
@@ -75,161 +79,123 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final salons = MockData.salons
+        .where((s) => s.lat != 0.0 && s.lng != 0.0)
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('نقشه آرایشگاه‌ها'),
         automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0.5,
       ),
       body: Stack(
         children: [
-          // Map
-          Container(
-            color: const Color(0xFFD4E6C3),
-            child: CustomPaint(
-              painter: _IranMapPainter(
-                salons: MockData.salons,
-                selected: _selectedSalon,
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _tehranCenter,
+              initialZoom: 12,
+              maxZoom: 18,
+              minZoom: 5,
+              onTap: (_, __) => setState(() => _selectedSalon = null),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.barberbook',
               ),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: (details) {
-                  final size = context.size!;
-                  final tappedSalon = _findTappedSalon(
-                    details.localPosition,
-                    size,
-                    MockData.salons,
-                  );
-                  setState(() => _selectedSalon = tappedSalon);
-                },
-                child: Stack(
-                  children: [
-                    // Grid lines
-                    ..._buildMapGrid(context),
-                    // Iran label
-                    Positioned(
-                      top: MediaQuery.of(context).size.height * 0.38,
-                      left: MediaQuery.of(context).size.width * 0.35,
-                      child: const Text(
-                        'ایران',
-                        style: TextStyle(
-                          fontFamily: 'Vazirmatn',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w300,
-                          color: Color(0xFF7A9E6B),
-                        ),
-                      ),
-                    ),
-                    // Salon markers
-                    ...MockData.salons.map((salon) {
-                      final pos = _latLngToOffset(salon.lat, salon.lng,
-                          MediaQuery.of(context).size);
-                      return Positioned(
-                        left: pos.dx - 20,
-                        top: pos.dy - 40,
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedSalon =
-                              _selectedSalon?.id == salon.id ? null : salon),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                width: _selectedSalon?.id == salon.id ? 44 : 36,
-                                height: _selectedSalon?.id == salon.id ? 44 : 36,
-                                decoration: BoxDecoration(
-                                  color: _selectedSalon?.id == salon.id
-                                      ? AppColors.secondary
-                                      : AppColors.primary,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(Icons.content_cut,
-                                    color: Colors.white, size: 20),
-                              ),
-                              const SizedBox(height: 2),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(6),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.15),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  salon.name.split(' ').take(2).join(' '),
-                                  style: const TextStyle(
-                                    fontFamily: 'Vazirmatn',
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                    // User location marker
-                    if (_userPosition != null)
-                      Builder(builder: (ctx) {
-                        final pos = _latLngToOffset(
-                          _userPosition!.latitude,
-                          _userPosition!.longitude,
-                          MediaQuery.of(ctx).size,
-                        );
-                        return Positioned(
-                          left: pos.dx - 12,
-                          top: pos.dy - 12,
-                          child: Container(
-                            width: 24,
-                            height: 24,
+              MarkerLayer(
+                markers: [
+                  // Salon markers
+                  ...salons.map((salon) => Marker(
+                    point: LatLng(salon.lat, salon.lng),
+                    width: 80,
+                    height: 60,
+                    child: GestureDetector(
+                      onTap: () => setState(() =>
+                          _selectedSalon = _selectedSalon?.id == salon.id ? null : salon),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: _selectedSalon?.id == salon.id ? 44 : 36,
+                            height: _selectedSalon?.id == salon.id ? 44 : 36,
                             decoration: BoxDecoration(
-                              color: Colors.blue,
+                              color: _selectedSalon?.id == salon.id
+                                  ? AppColors.secondary
+                                  : AppColors.primary,
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.blue.withOpacity(0.4),
-                                  blurRadius: 10,
-                                  spreadRadius: 3,
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
+                            child: const Icon(Icons.content_cut,
+                                color: Colors.white, size: 20),
                           ),
-                        );
-                      }),
-                    // Attribution
-                    Positioned(
-                      bottom: 16,
-                      right: 16,
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.15),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              salon.name.split(' ').take(2).join(' '),
+                              style: const TextStyle(
+                                fontFamily: 'Vazirmatn',
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+                  // User location marker
+                  if (_userLatLng != null)
+                    Marker(
+                      point: _userLatLng!,
+                      width: 24,
+                      height: 24,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '© OpenStreetMap',
-                          style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.4),
+                              blurRadius: 10,
+                              spreadRadius: 3,
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
-            ),
+              const RichAttributionWidget(
+                attributions: [
+                  TextSourceAttribution('OpenStreetMap contributors'),
+                ],
+              ),
+            ],
           ),
           // My location button
           Positioned(
@@ -238,38 +204,12 @@ class _MapScreenState extends State<MapScreen> {
             child: FloatingActionButton.small(
               heroTag: 'my_location',
               backgroundColor: Colors.white,
-              onPressed: _requestLocationAndShow,
+              elevation: 4,
+              onPressed: _goToMyLocation,
               child: const Icon(Icons.my_location, color: AppColors.primary),
             ),
           ),
-          // My location label
-          Positioned(
-            top: 16,
-            left: 60,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              child: const Text(
-                'مکان من',
-                style: TextStyle(
-                  fontFamily: 'Vazirmatn',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-          ),
-          // Bottom sheet for selected salon
+          // Bottom salon preview sheet
           if (_selectedSalon != null)
             Positioned(
               bottom: 0,
@@ -283,132 +223,44 @@ class _MapScreenState extends State<MapScreen> {
                     Get.toNamed(Routes.salonDetail, arguments: _selectedSalon),
               ),
             ),
+          // Empty state when no salons have locations
+          if (salons.isEmpty)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_off_outlined, size: 48, color: AppColors.textSecondary),
+                    SizedBox(height: 12),
+                    Text(
+                      'آرایشگاهی با موقعیت مکانی ثبت نشده است',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
-
-  List<Widget> _buildMapGrid(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final widgets = <Widget>[];
-    for (int i = 1; i < 8; i++) {
-      widgets.add(Positioned(
-        top: size.height * i / 8,
-        left: 0,
-        right: 0,
-        child: Container(height: 0.5, color: Colors.grey.withOpacity(0.2)),
-      ));
-      widgets.add(Positioned(
-        left: size.width * i / 8,
-        top: 0,
-        bottom: 0,
-        child: Container(width: 0.5, color: Colors.grey.withOpacity(0.2)),
-      ));
-    }
-    return widgets;
-  }
-
-  Offset _latLngToOffset(double lat, double lng, Size size) {
-    // Map bounds for Iran
-    const minLat = 25.0, maxLat = 40.0;
-    const minLng = 44.0, maxLng = 64.0;
-    final x = (lng - minLng) / (maxLng - minLng) * size.width;
-    final y = (1 - (lat - minLat) / (maxLat - minLat)) * (size.height - 200);
-    return Offset(x, y);
-  }
-
-  SalonModel? _findTappedSalon(Offset tap, Size size, List<SalonModel> salons) {
-    for (final salon in salons) {
-      final pos = _latLngToOffset(salon.lat, salon.lng, size);
-      if ((tap - pos).distance < 30) return salon;
-    }
-    return null;
-  }
-}
-
-class _IranMapPainter extends CustomPainter {
-  final List<SalonModel> salons;
-  final SalonModel? selected;
-
-  _IranMapPainter({required this.salons, this.selected});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Draw stylized Iran shape using bezier paths
-    final landPaint = Paint()
-      ..color = const Color(0xFFC8DEB8)
-      ..style = PaintingStyle.fill;
-
-    final borderPaint = Paint()
-      ..color = const Color(0xFF8EAF7E)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final roadPaint = Paint()
-      ..color = Colors.white.withOpacity(0.7)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    final minorRoadPaint = Paint()
-      ..color = Colors.white.withOpacity(0.4)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    // Approximate Iran outline as a polygon (simplified)
-    final iranPath = Path();
-    // Normalized coordinates for Iran shape (approximate)
-    final points = [
-      Offset(size.width * 0.12, size.height * 0.18), // NW corner
-      Offset(size.width * 0.28, size.height * 0.08), // North
-      Offset(size.width * 0.45, size.height * 0.05), // North-center
-      Offset(size.width * 0.60, size.height * 0.10), // NE area
-      Offset(size.width * 0.72, size.height * 0.20), // East
-      Offset(size.width * 0.85, size.height * 0.25), // SE-East
-      Offset(size.width * 0.88, size.height * 0.45), // SE
-      Offset(size.width * 0.82, size.height * 0.62), // South-East
-      Offset(size.width * 0.70, size.height * 0.72), // South
-      Offset(size.width * 0.55, size.height * 0.78), // South-center
-      Offset(size.width * 0.40, size.height * 0.80), // South-SW
-      Offset(size.width * 0.25, size.height * 0.72), // SW
-      Offset(size.width * 0.15, size.height * 0.55), // West
-      Offset(size.width * 0.08, size.height * 0.38), // NW-W
-      Offset(size.width * 0.12, size.height * 0.18), // back to start
-    ];
-
-    iranPath.moveTo(points[0].dx, points[0].dy);
-    for (int i = 1; i < points.length; i++) {
-      iranPath.lineTo(points[i].dx, points[i].dy);
-    }
-    iranPath.close();
-
-    canvas.drawPath(iranPath, landPaint);
-    canvas.drawPath(iranPath, borderPaint);
-
-    // Major roads
-    canvas.drawLine(
-      Offset(size.width * 0.25, size.height * 0.35),
-      Offset(size.width * 0.70, size.height * 0.40),
-      roadPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.45, size.height * 0.15),
-      Offset(size.width * 0.48, size.height * 0.72),
-      roadPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.20, size.height * 0.55),
-      Offset(size.width * 0.75, size.height * 0.62),
-      minorRoadPaint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.30, size.height * 0.22),
-      Offset(size.width * 0.55, size.height * 0.58),
-      minorRoadPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_IranMapPainter old) => old.selected?.id != selected?.id;
 }
 
 class _SalonPreviewSheet extends StatelessWidget {
