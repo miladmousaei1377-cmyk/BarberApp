@@ -7,6 +7,8 @@ import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
+import '../../../core/config/map_config.dart';
+import '../../../core/services/neshan_service.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../data/models/salon_model.dart';
 
@@ -28,6 +30,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 21, minute: 0);
   bool _isLoading = false;
+  bool _geocoding = false;
   final List<XFile> _images = [];
   final _imagePicker = ImagePicker();
   bool _locationEnabled = false;
@@ -70,6 +73,35 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         try { _previewMapController.move(LatLng(_lat, _lng), 15); } catch (_) {}
       });
+    }
+  }
+
+  Future<void> _geocodeAddress() async {
+    if (_addressController.text.trim().isEmpty) return;
+    setState(() => _geocoding = true);
+    final ll = await NeshanService.geocodeAddress(_addressController.text);
+    if (!mounted) return;
+    setState(() => _geocoding = false);
+    if (ll != null) {
+      setState(() {
+        _lat = ll.latitude;
+        _lng = ll.longitude;
+        _locationEnabled = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try { _previewMapController.move(LatLng(_lat, _lng), 15); } catch (_) {}
+      });
+    } else {
+      Get.snackbar(
+        'آدرس یافت نشد',
+        'لطفاً آدرس دقیق‌تری وارد کنید یا موقعیت را دستی انتخاب کنید',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
@@ -229,6 +261,19 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                 labelText: 'آدرس',
                 labelStyle: const TextStyle(fontFamily: 'Vazirmatn'),
                 prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.textSecondary),
+                suffixIcon: _geocoding
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.search_outlined, color: AppColors.primary),
+                        tooltip: 'یافتن موقعیت از آدرس',
+                        onPressed: _geocodeAddress,
+                      ),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               validator: (v) {
@@ -407,8 +452,10 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        subdomains: const ['a', 'b', 'c'],
+                        urlTemplate: MapConfig.neshanTileUrl,
+                        tileProvider: NetworkTileProvider(
+                          headers: {'Api-Key': MapConfig.neshanApiKey},
+                        ),
                         userAgentPackageName: 'com.barberbook.app',
                       ),
                       MarkerLayer(

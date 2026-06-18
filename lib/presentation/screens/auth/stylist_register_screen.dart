@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/auth_controller.dart';
+import '../../../core/config/map_config.dart';
 
 class StylistRegisterScreen extends StatefulWidget {
   const StylistRegisterScreen({super.key});
@@ -334,8 +335,11 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                         ),
                         children: [
                           TileLayer(
-                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.example.barberbook',
+                            urlTemplate: MapConfig.neshanTileUrl,
+                            tileProvider: NetworkTileProvider(
+                              headers: {'Api-Key': MapConfig.neshanApiKey},
+                            ),
+                            userAgentPackageName: 'com.barberbook.app',
                           ),
                           MarkerLayer(
                             markers: [

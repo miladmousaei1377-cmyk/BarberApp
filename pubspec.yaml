@@ -25,6 +25,7 @@ dependencies:
 
   # Utilities
   url_launcher: ^6.2.4
+  http: ^1.2.0
   geolocator: ^10.1.0
 
   # Map

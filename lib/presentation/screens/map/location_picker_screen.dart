@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../core/config/map_config.dart';
 
 class LocationPickerScreen extends StatefulWidget {
   const LocationPickerScreen({super.key});
@@ -64,8 +65,10 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                subdomains: const ['a', 'b', 'c'],
+                urlTemplate: MapConfig.neshanTileUrl,
+                tileProvider: NetworkTileProvider(
+                  headers: {'Api-Key': MapConfig.neshanApiKey},
+                ),
                 userAgentPackageName: 'com.barberbook.app',
               ),
               if (_selected != null)
@@ -80,7 +83,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                   ],
                 ),
               const RichAttributionWidget(
-                attributions: [TextSourceAttribution('OpenStreetMap contributors')],
+                attributions: [TextSourceAttribution('نشان')],
               ),
             ],
           ),

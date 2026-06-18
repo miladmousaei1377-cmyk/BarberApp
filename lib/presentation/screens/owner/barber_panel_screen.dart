@@ -12,6 +12,7 @@ import 'package:printing/printing.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
+import '../../../core/config/map_config.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/utils/persian_utils.dart';
@@ -1011,8 +1012,10 @@ class _SalonInfoSubTab extends StatelessWidget {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          subdomains: const ['a', 'b', 'c'],
+                          urlTemplate: MapConfig.neshanTileUrl,
+                          tileProvider: NetworkTileProvider(
+                            headers: {'Api-Key': MapConfig.neshanApiKey},
+                          ),
                           userAgentPackageName: 'com.barberbook.app',
                         ),
                         MarkerLayer(
