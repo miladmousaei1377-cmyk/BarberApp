@@ -155,9 +155,6 @@ class _MapScreenState extends State<MapScreen> {
                   children: [
                     TileLayer(
                       urlTemplate: MapConfig.neshanTileUrl,
-                      tileProvider: NetworkTileProvider(
-                        headers: {'Api-Key': MapConfig.neshanApiKey},
-                      ),
                       userAgentPackageName: 'com.barberbook.app',
                     ),
                     // Radius circle

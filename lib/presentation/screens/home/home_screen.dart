@@ -165,24 +165,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<SalonModel> get _nearbySalons {
-    // When city selected, filter strictly — no fallback to other cities
-    if (_selectedCity != null && _selectedCity!.isNotEmpty) {
-      return MockData.salons
-          .where((s) => s.address.contains(_selectedCity!))
-          .toList();
-    }
-    // No city selected — use GPS distance
+    final withCoords = MockData.salons.where((s) => s.lat != 0.0 && s.lng != 0.0).toList();
     if (_userPosition != null) {
       const dist = Distance();
       final userLoc = LatLng(_userPosition!.latitude, _userPosition!.longitude);
-      final nearby = MockData.salons.where((s) {
-        if (s.lat == 0.0 && s.lng == 0.0) return false;
+      final nearby = withCoords.where((s) {
         final km = dist.as(LengthUnit.Kilometer, userLoc, LatLng(s.lat, s.lng));
-        return km <= 10.0;
-      }).toList();
+        return km <= 15.0;
+      }).toList()
+        ..sort((a, b) {
+          final dA = dist.as(LengthUnit.Kilometer, userLoc, LatLng(a.lat, a.lng));
+          final dB = dist.as(LengthUnit.Kilometer, userLoc, LatLng(b.lat, b.lng));
+          return dA.compareTo(dB);
+        });
       if (nearby.isNotEmpty) return nearby;
     }
-    return MockData.salons.take(4).toList();
+    // No GPS — return all salons with coordinates
+    return withCoords;
   }
 
   @override
@@ -427,7 +426,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const Spacer(),
               TextButton(
-                onPressed: () => Get.toNamed(Routes.salonList),
+                onPressed: () => Get.toNamed(
+                  Routes.salonList,
+                  arguments: _userPosition != null
+                      ? LatLng(_userPosition!.latitude, _userPosition!.longitude)
+                      : null,
+                ),
                 child: const Text(
                   'مشاهده همه',
                   style: TextStyle(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../data/mock/mock_data.dart';
@@ -18,11 +19,28 @@ class _SalonListScreenState extends State<SalonListScreen> {
   String _selectedCategory = 'all';
   String _sortBy = 'rating';
   bool _isLoading = false;
+  LatLng? _userLatLng;
+
+  @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments;
+    if (args is LatLng) _userLatLng = args;
+  }
 
   List<SalonModel> get _sortedSalons {
     var list = MockData.getSalonsByCategory(
       _selectedCategory == 'all' ? null : _selectedCategory,
     );
+    // Filter by proximity when GPS available (50km radius)
+    if (_userLatLng != null) {
+      const dist = Distance();
+      list = list.where((s) {
+        if (s.lat == 0.0 && s.lng == 0.0) return false;
+        final km = dist.as(LengthUnit.Kilometer, _userLatLng!, LatLng(s.lat, s.lng));
+        return km <= 50.0;
+      }).toList();
+    }
     list = List.from(list);
     switch (_sortBy) {
       case 'rating':

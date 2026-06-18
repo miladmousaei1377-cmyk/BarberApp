@@ -71,15 +71,97 @@ class MockData {
   }
 
   static void _initSalons() {
-    salons = [];
+    salons = [
+      // Demo salons with real Iranian coordinates
+      SalonModel(
+        id: 'salon_demo1',
+        name: 'آرایشگاه خاص',
+        description: 'آرایشگاه مردانه مدرن در قلب تهران با بیش از ۱۰ سال سابقه',
+        address: 'تهران، جردن، خیابان اسفندیار',
+        lat: 35.7652,
+        lng: 51.4122,
+        rating: 4.8,
+        reviewCount: 124,
+        isVerified: true,
+        category: SalonCategory.male,
+        ownerId: 'b_demo1',
+        openTime: '09:00',
+        closeTime: '21:00',
+        phone: '02122001100',
+      ),
+      SalonModel(
+        id: 'salon_demo2',
+        name: 'سالن زیبایی نگار',
+        description: 'سالن تخصصی بانوان، خدمات رنگ مو، کراتین و اکستنشن',
+        address: 'تهران، ولیعصر، بالاتر از پارک ساعی',
+        lat: 35.7315,
+        lng: 51.3985,
+        rating: 4.6,
+        reviewCount: 89,
+        isVerified: true,
+        category: SalonCategory.female,
+        ownerId: 'b_demo2',
+        openTime: '10:00',
+        closeTime: '20:00',
+        phone: '02188002200',
+      ),
+      SalonModel(
+        id: 'salon_demo3',
+        name: 'آرایشگاه مدرن شیراز',
+        description: 'ارائه خدمات آرایشی مردانه با جدیدترین متدهای روز دنیا',
+        address: 'شیراز، قصرالدشت، خیابان کریم خان',
+        lat: 29.5918,
+        lng: 52.5836,
+        rating: 4.5,
+        reviewCount: 57,
+        isVerified: false,
+        category: SalonCategory.male,
+        ownerId: 'b_demo1',
+        openTime: '09:00',
+        closeTime: '22:00',
+        phone: '07132003300',
+      ),
+      SalonModel(
+        id: 'salon_demo4',
+        name: 'استودیو یونیسکس اصفهان',
+        description: 'استودیو زیبایی مختلط با بهترین امکانات و متخصص‌ترین تیم',
+        address: 'اصفهان، چهارباغ عباسی، نبش خیابان هشت بهشت',
+        lat: 32.6546,
+        lng: 51.6680,
+        rating: 4.7,
+        reviewCount: 201,
+        isVerified: true,
+        category: SalonCategory.unisex,
+        ownerId: 'b_demo1',
+        openTime: '08:00',
+        closeTime: '21:00',
+        phone: '03132004400',
+      ),
+    ];
   }
 
   static void _initStylists() {
-    stylists = [];
+    stylists = [
+      StylistModel(id: 'st_salon_demo1', salonId: 'salon_demo1', name: 'حسین نوری', specialty: 'آرایشگر', rating: 4.9),
+      StylistModel(id: 'st_salon_demo2', salonId: 'salon_demo2', name: 'مریم صادقی', specialty: 'متخصص مو', rating: 4.7),
+      StylistModel(id: 'st_salon_demo3', salonId: 'salon_demo3', name: 'رضا احمدی', specialty: 'آرایشگر', rating: 4.5),
+      StylistModel(id: 'st_salon_demo4', salonId: 'salon_demo4', name: 'نیلوفر کریمی', specialty: 'استایلیست', rating: 4.8),
+    ];
   }
 
   static void _initServices() {
-    services = [];
+    services = [
+      const ServiceModel(id: 'svc_d1_1', salonId: 'salon_demo1', name: 'کوتاهی مو', durationMinutes: 30, price: 120000, category: 'hair'),
+      const ServiceModel(id: 'svc_d1_2', salonId: 'salon_demo1', name: 'اصلاح ریش', durationMinutes: 20, price: 80000, category: 'beard'),
+      const ServiceModel(id: 'svc_d1_3', salonId: 'salon_demo1', name: 'شامپو و سشوار', durationMinutes: 20, price: 60000, category: 'hair'),
+      const ServiceModel(id: 'svc_d2_1', salonId: 'salon_demo2', name: 'رنگ مو', durationMinutes: 90, price: 450000, category: 'color'),
+      const ServiceModel(id: 'svc_d2_2', salonId: 'salon_demo2', name: 'کوتاهی مو', durationMinutes: 45, price: 180000, category: 'hair'),
+      const ServiceModel(id: 'svc_d2_3', salonId: 'salon_demo2', name: 'کراتین', durationMinutes: 120, price: 800000, category: 'treatment'),
+      const ServiceModel(id: 'svc_d3_1', salonId: 'salon_demo3', name: 'کوتاهی مو', durationMinutes: 30, price: 100000, category: 'hair'),
+      const ServiceModel(id: 'svc_d3_2', salonId: 'salon_demo3', name: 'پاکسازی صورت', durationMinutes: 40, price: 150000, category: 'skin'),
+      const ServiceModel(id: 'svc_d4_1', salonId: 'salon_demo4', name: 'کوتاهی مو', durationMinutes: 40, price: 200000, category: 'hair'),
+      const ServiceModel(id: 'svc_d4_2', salonId: 'salon_demo4', name: 'هایلایت', durationMinutes: 100, price: 600000, category: 'color'),
+    ];
   }
 
   static void _initWorkingHours() {

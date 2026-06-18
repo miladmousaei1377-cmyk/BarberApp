@@ -412,7 +412,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            // Optional location
+            // Location section — always accessible
             Row(
               children: [
                 Expanded(
@@ -437,6 +437,27 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                 ),
               ],
             ),
+            // Pick location button always visible
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  if (!_locationEnabled) setState(() => _locationEnabled = true);
+                  await _pickLocation();
+                },
+                icon: const Icon(Icons.edit_location_alt_outlined, size: 18),
+                label: Text(
+                  _locationEnabled ? 'ویرایش موقعیت روی نقشه' : 'انتخاب موقعیت روی نقشه',
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+            ),
             if (_locationEnabled) ...[
               const SizedBox(height: 10),
               ClipRRect(
@@ -453,9 +474,6 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                     children: [
                       TileLayer(
                         urlTemplate: MapConfig.neshanTileUrl,
-                        tileProvider: NetworkTileProvider(
-                          headers: {'Api-Key': MapConfig.neshanApiKey},
-                        ),
                         userAgentPackageName: 'com.barberbook.app',
                       ),
                       MarkerLayer(
@@ -472,21 +490,14 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.location_on, color: Colors.teal, size: 15),
+                  const Icon(Icons.check_circle, color: Colors.teal, size: 15),
                   const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      'طول: ${_lat.toStringAsFixed(4)} | عرض: ${_lng.toStringAsFixed(4)}',
-                      style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.teal),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: _pickLocation,
-                    icon: const Icon(Icons.edit_location_alt_outlined, size: 15),
-                    label: const Text('ویرایش موقعیت', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12)),
+                  Text(
+                    'موقعیت انتخاب شد: ${_lat.toStringAsFixed(4)}, ${_lng.toStringAsFixed(4)}',
+                    style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.teal),
                   ),
                 ],
               ),

@@ -336,9 +336,6 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                         children: [
                           TileLayer(
                             urlTemplate: MapConfig.neshanTileUrl,
-                            tileProvider: NetworkTileProvider(
-                              headers: {'Api-Key': MapConfig.neshanApiKey},
-                            ),
                             userAgentPackageName: 'com.barberbook.app',
                           ),
                           MarkerLayer(

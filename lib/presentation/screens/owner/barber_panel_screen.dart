@@ -1013,9 +1013,6 @@ class _SalonInfoSubTab extends StatelessWidget {
                       children: [
                         TileLayer(
                           urlTemplate: MapConfig.neshanTileUrl,
-                          tileProvider: NetworkTileProvider(
-                            headers: {'Api-Key': MapConfig.neshanApiKey},
-                          ),
                           userAgentPackageName: 'com.barberbook.app',
                         ),
                         MarkerLayer(
@@ -2898,8 +2895,7 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
                         ),
                         children: [
                           TileLayer(
-                            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            subdomains: const ['a', 'b', 'c'],
+                            urlTemplate: MapConfig.neshanTileUrl,
                             userAgentPackageName: 'com.barberbook.app',
                           ),
                           MarkerLayer(

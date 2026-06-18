@@ -727,9 +727,6 @@ class _InfoTab extends StatelessWidget {
                 children: [
                   TileLayer(
                     urlTemplate: MapConfig.neshanTileUrl,
-                    tileProvider: NetworkTileProvider(
-                      headers: {'Api-Key': MapConfig.neshanApiKey},
-                    ),
                     userAgentPackageName: 'com.barberbook.app',
                   ),
                   MarkerLayer(

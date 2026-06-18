@@ -66,9 +66,6 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             children: [
               TileLayer(
                 urlTemplate: MapConfig.neshanTileUrl,
-                tileProvider: NetworkTileProvider(
-                  headers: {'Api-Key': MapConfig.neshanApiKey},
-                ),
                 userAgentPackageName: 'com.barberbook.app',
               ),
               if (_selected != null)
