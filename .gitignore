@@ -1,3 +1,6 @@
+# Claude Code tooling
+.claude/
+
 # Miscellaneous
 *.class
 *.log
