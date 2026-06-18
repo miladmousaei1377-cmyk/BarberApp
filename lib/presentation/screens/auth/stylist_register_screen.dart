@@ -8,6 +8,7 @@ import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../core/config/map_config.dart';
+import '../../../core/services/neshan_tile_provider.dart';
 
 class StylistRegisterScreen extends StatefulWidget {
   const StylistRegisterScreen({super.key});
@@ -336,6 +337,7 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                         children: [
                           TileLayer(
                             urlTemplate: MapConfig.neshanTileUrl,
+                            tileProvider: NeshanTileProvider(),
                             userAgentPackageName: 'com.barberbook.app',
                           ),
                           MarkerLayer(

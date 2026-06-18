@@ -13,6 +13,7 @@ import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
 import '../../../core/config/map_config.dart';
+import '../../../core/services/neshan_tile_provider.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/utils/persian_utils.dart';
@@ -1013,6 +1014,7 @@ class _SalonInfoSubTab extends StatelessWidget {
                       children: [
                         TileLayer(
                           urlTemplate: MapConfig.neshanTileUrl,
+                          tileProvider: NeshanTileProvider(),
                           userAgentPackageName: 'com.barberbook.app',
                         ),
                         MarkerLayer(
@@ -2896,6 +2898,7 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
                         children: [
                           TileLayer(
                             urlTemplate: MapConfig.neshanTileUrl,
+                            tileProvider: NeshanTileProvider(),
                             userAgentPackageName: 'com.barberbook.app',
                           ),
                           MarkerLayer(

@@ -12,6 +12,36 @@ import '../../../data/models/salon_model.dart';
 import '../../widgets/salon_card.dart';
 import '../../widgets/loading_shimmer.dart';
 
+// City center coordinates for proximity-based filtering
+const _kCityCenters = {
+  'تهران':     (35.6892, 51.3890),
+  'مشهد':      (36.2972, 59.6067),
+  'اصفهان':    (32.6546, 51.6680),
+  'کرج':       (35.8327, 50.9986),
+  'شیراز':     (29.5918, 52.5836),
+  'تبریز':     (38.0799, 46.2910),
+  'اهواز':     (31.3183, 48.6694),
+  'قم':        (34.6416, 50.8746),
+  'کرمانشاه':  (34.3277, 47.0783),
+  'ارومیه':    (37.5527, 45.0760),
+  'رشت':       (37.2809, 49.5831),
+  'زاهدان':    (29.4963, 60.8629),
+  'همدان':     (34.7990, 48.5146),
+  'کرمان':     (30.2839, 57.0834),
+  'یزد':       (31.8974, 54.3569),
+  'اردبیل':    (38.2498, 48.2933),
+  'بندر عباس': (27.1865, 56.2808),
+  'اراک':      (34.0954, 49.7088),
+  'قزوین':     (36.2688, 50.0041),
+  'سنندج':     (35.3219, 46.9861),
+  'گرگان':     (36.8422, 54.4415),
+  'ساری':      (36.5633, 53.0601),
+  'زنجان':     (36.6736, 48.4787),
+  'بیرجند':    (32.8663, 59.2211),
+  'خرم‌آباد':  (33.4878, 48.3558),
+  'سمنان':     (35.5761, 53.3895),
+};
+
 const _kIranCities = [
   'تهران', 'مشهد', 'اصفهان', 'کرج', 'شیراز', 'تبریز', 'اهواز',
   'قم', 'کرمانشاه', 'ارومیه', 'رشت', 'زاهدان', 'همدان', 'کرمان',
@@ -166,8 +196,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<SalonModel> get _nearbySalons {
     final withCoords = MockData.salons.where((s) => s.lat != 0.0 && s.lng != 0.0).toList();
+    const dist = Distance();
+
+    // City selected → filter by distance from city center (50 km)
+    if (_selectedCity != null && _selectedCity!.isNotEmpty) {
+      final coords = _kCityCenters[_selectedCity!];
+      if (coords != null) {
+        final cityCenter = LatLng(coords.$1, coords.$2);
+        final inCity = withCoords.where((s) {
+          final km = dist.as(LengthUnit.Kilometer, cityCenter, LatLng(s.lat, s.lng));
+          return km <= 50.0;
+        }).toList()
+          ..sort((a, b) {
+            final dA = dist.as(LengthUnit.Kilometer, cityCenter, LatLng(a.lat, a.lng));
+            final dB = dist.as(LengthUnit.Kilometer, cityCenter, LatLng(b.lat, b.lng));
+            return dA.compareTo(dB);
+          });
+        return inCity;
+      }
+    }
+
+    // No city selected — filter by GPS (15 km)
     if (_userPosition != null) {
-      const dist = Distance();
       final userLoc = LatLng(_userPosition!.latitude, _userPosition!.longitude);
       final nearby = withCoords.where((s) {
         final km = dist.as(LengthUnit.Kilometer, userLoc, LatLng(s.lat, s.lng));
@@ -180,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       if (nearby.isNotEmpty) return nearby;
     }
-    // No GPS — return all salons with coordinates
+
     return withCoords;
   }
 

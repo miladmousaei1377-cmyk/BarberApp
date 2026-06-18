@@ -9,6 +9,7 @@ import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
 import '../../../core/config/map_config.dart';
 import '../../../core/services/neshan_service.dart';
+import '../../../core/services/neshan_tile_provider.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../data/models/salon_model.dart';
 
@@ -474,6 +475,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                     children: [
                       TileLayer(
                         urlTemplate: MapConfig.neshanTileUrl,
+                        tileProvider: NeshanTileProvider(),
                         userAgentPackageName: 'com.barberbook.app',
                       ),
                       MarkerLayer(
