@@ -36,13 +36,6 @@ const _kSurface = Colors.white;
 
 const _dayNames = ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'];
 
-const _kIranCities = [
-  'تهران', 'مشهد', 'اصفهان', 'کرج', 'شیراز', 'تبریز', 'اهواز',
-  'قم', 'کرمانشاه', 'ارومیه', 'رشت', 'زاهدان', 'همدان', 'کرمان',
-  'یزد', 'اردبیل', 'بندر عباس', 'اراک', 'قزوین', 'سنندج',
-  'سمنان', 'گرگان', 'ساری', 'زنجان', 'بیرجند', 'خرم‌آباد',
-];
-
 // ════════════════════════════════════════════════════════════════════════════
 // Main screen  —  tabs: داشبورد / نوبت‌ها / سالن / آمار / پروفایل
 // ════════════════════════════════════════════════════════════════════════════
@@ -182,106 +175,6 @@ class _DashboardTab extends StatefulWidget {
 }
 
 class _DashboardTabState extends State<_DashboardTab> {
-  String? _selectedCity;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedCity = StorageService.selectedCity;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!StorageService.hasCitySelected && mounted) {
-        _showCitySelector(firstTime: true);
-      }
-    });
-  }
-
-  void _showCitySelector({bool firstTime = false}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) {
-        final searchCtrl = TextEditingController();
-        return StatefulBuilder(
-          builder: (ctx, setS) {
-            final query = searchCtrl.text.trim();
-            final filtered = query.isEmpty
-                ? _kIranCities
-                : _kIranCities.where((c) => c.contains(query)).toList();
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.location_city, color: _kPrimary, size: 24),
-                            const SizedBox(width: 8),
-                            Text(
-                              firstTime ? 'شهر خود را انتخاب کنید' : 'تغییر شهر',
-                              style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 18, fontWeight: FontWeight.w700, color: _kPrimary),
-                            ),
-                          ],
-                        ),
-                        if (firstTime) ...[
-                          const SizedBox(height: 4),
-                          const Text('برای نمایش آرایشگاه‌های شهر خود', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: Colors.grey)),
-                        ],
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: searchCtrl,
-                          textDirection: TextDirection.rtl,
-                          style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'جستجوی شهر...',
-                            hintStyle: const TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey, fontSize: 13),
-                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          ),
-                          onChanged: (_) => setS(() {}),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 280,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) {
-                        final city = filtered[i];
-                        final isSelected = city == _selectedCity;
-                        return ListTile(
-                          title: Text(city, style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal, color: isSelected ? _kPrimary : Colors.black87)),
-                          trailing: isSelected ? const Icon(Icons.check_circle, color: _kPrimary, size: 20) : null,
-                          onTap: () async {
-                            await StorageService.setSelectedCity(city);
-                            if (mounted) {
-                              setState(() => _selectedCity = city);
-                              Navigator.pop(ctx);
-                            }
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final ctrl = OwnerController.to;
@@ -301,31 +194,7 @@ class _DashboardTabState extends State<_DashboardTab> {
               pinned: true,
               automaticallyImplyLeading: false,
               backgroundColor: _kPrimary,
-              actions: [
-                GestureDetector(
-                  onTap: () => _showCitySelector(),
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 12, top: 10, bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white30),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.location_city, color: Colors.white, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          _selectedCity ?? 'انتخاب شهر',
-                          style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              actions: const [],
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: const BoxDecoration(
