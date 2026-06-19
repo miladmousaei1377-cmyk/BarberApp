@@ -26,10 +26,16 @@ class _MapScreenState extends State<MapScreen> {
   final _mapController = MapController();
   LatLng? _userLatLng;
   double _radiusKm = 5.0;
+  double _prevRadiusKm = 5.0;
   List<SalonModel> _nearby = [];
   SalonModel? _selected;
   bool _loading = false;
   Timer? _debounce;
+
+  bool _tilesLoading = true;
+  bool _tilesError = false;
+  int _mapKey = 0; // increment to force FlutterMap rebuild
+  Timer? _tileTimer;
 
   static const _tehran = LatLng(35.7219, 51.3347);
 
@@ -37,11 +43,20 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _tryGetLocation();
+    _tileTimer = Timer(const Duration(seconds: 8), () {
+      if (mounted && _tilesLoading) {
+        setState(() => _tilesError = true);
+      }
+    });
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && !_tilesError) setState(() => _tilesLoading = false);
+    });
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
+    _tileTimer?.cancel();
     _mapController.dispose();
     super.dispose();
   }
@@ -142,6 +157,7 @@ class _MapScreenState extends State<MapScreen> {
             child: Stack(
               children: [
                 FlutterMap(
+                  key: ValueKey(_mapKey),
                   mapController: _mapController,
                   options: MapOptions(
                     initialCenter: _userLatLng ?? _tehran,
@@ -158,20 +174,32 @@ class _MapScreenState extends State<MapScreen> {
                       urlTemplate: MapConfig.neshanTileUrl,
                       tileProvider: NeshanTileProvider(),
                       userAgentPackageName: 'com.barberbook.app',
+                      errorTileCallback: (tile, error, stackTrace) {
+                        // error already logged in NeshanTileProvider
+                      },
                     ),
                     // Radius circle
                     if (_userLatLng != null)
-                      CircleLayer(
-                        circles: [
-                          CircleMarker(
-                            point: _userLatLng!,
-                            radius: _radiusKm * 1000,
-                            useRadiusInMeter: true,
-                            color: AppColors.primary.withOpacity(0.08),
-                            borderColor: AppColors.primary.withOpacity(0.4),
-                            borderStrokeWidth: 1.5,
-                          ),
-                        ],
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(
+                            begin: _prevRadiusKm * 1000,
+                            end: _radiusKm * 1000),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOut,
+                        builder: (context, animRadius, _) {
+                          return CircleLayer(
+                            circles: [
+                              CircleMarker(
+                                point: _userLatLng!,
+                                radius: animRadius,
+                                useRadiusInMeter: true,
+                                color: AppColors.primary.withOpacity(0.08),
+                                borderColor: AppColors.primary.withOpacity(0.4),
+                                borderStrokeWidth: 1.5,
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     // Salon markers
                     MarkerLayer(
@@ -260,14 +288,112 @@ class _MapScreenState extends State<MapScreen> {
                 Positioned(
                   top: 12,
                   left: 12,
-                  child: FloatingActionButton.small(
-                    heroTag: 'my_loc',
-                    backgroundColor: Colors.white,
-                    elevation: 4,
-                    onPressed: _goToMyLocation,
-                    child: const Icon(Icons.my_location, color: AppColors.primary),
+                  child: GestureDetector(
+                    onTap: _goToMyLocation,
+                    child: AnimatedScale(
+                      scale: 1.0,
+                      duration: const Duration(milliseconds: 150),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.my_location_rounded,
+                            color: AppColors.primary, size: 22),
+                      ),
+                    ),
                   ),
                 ),
+                // Tile loading shimmer overlay
+                if (_tilesLoading && !_tilesError)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Shimmer.fromColors(
+                        baseColor: Colors.grey.withOpacity(0.15),
+                        highlightColor: Colors.white.withOpacity(0.3),
+                        period: const Duration(milliseconds: 1200),
+                        child: Container(color: Colors.white.withOpacity(0.05)),
+                      ),
+                    ),
+                  ),
+                // Tile error overlay
+                if (_tilesError)
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20)
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.map_outlined,
+                              size: 56, color: AppColors.textSecondary),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'نقشه در حال حاضر در دسترس نیست',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontFamily: 'Vazirmatn',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'لطفاً اتصال اینترنت خود را بررسی کنید',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontFamily: 'Vazirmatn',
+                                fontSize: 12,
+                                color: AppColors.textSecondary),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () => setState(() {
+                              _tilesLoading = true;
+                              _tilesError = false;
+                              _mapKey++;
+                              _tileTimer?.cancel();
+                              _tileTimer =
+                                  Timer(const Duration(seconds: 8), () {
+                                if (mounted && _tilesLoading) {
+                                  setState(() => _tilesError = true);
+                                }
+                              });
+                            }),
+                            icon: const Icon(Icons.refresh, size: 18),
+                            label: const Text('تلاش مجدد',
+                                style: TextStyle(
+                                    fontFamily: 'Vazirmatn',
+                                    fontWeight: FontWeight.w600)),
+                            style: ElevatedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 10),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 // Loading shimmer overlay
                 if (_loading)
                   Positioned.fill(
@@ -387,7 +513,10 @@ class _MapScreenState extends State<MapScreen> {
                     max: 20,
                     divisions: 19,
                     onChanged: (v) {
-                      setState(() => _radiusKm = v);
+                      setState(() {
+                        _prevRadiusKm = _radiusKm;
+                        _radiusKm = v;
+                      });
                       _scheduleRefresh();
                     },
                   ),

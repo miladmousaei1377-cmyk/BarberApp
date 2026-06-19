@@ -16,6 +16,7 @@ class SalonModel {
   final List<String> images;
   final String? phone;
   final bool isActive;
+  final String city;
   final String openTime;
   final String closeTime;
 
@@ -35,6 +36,7 @@ class SalonModel {
     this.images = const [],
     this.phone,
     this.isActive = true,
+    this.city = '',
     this.openTime = '09:00',
     this.closeTime = '21:00',
   });
@@ -48,6 +50,7 @@ class SalonModel {
     SalonCategory? category,
     String? phone,
     bool? isActive,
+    String? city,
     String? openTime,
     String? closeTime,
     List<String>? images,
@@ -68,6 +71,7 @@ class SalonModel {
         images: images ?? this.images,
         phone: phone ?? this.phone,
         isActive: isActive ?? this.isActive,
+        city: city ?? this.city,
         openTime: openTime ?? this.openTime,
         closeTime: closeTime ?? this.closeTime,
       );
@@ -110,6 +114,7 @@ class SalonModel {
         'images': images,
         'phone': phone,
         'is_active': isActive,
+        'city': city,
         'open_time': openTime,
         'close_time': closeTime,
       };
@@ -133,6 +138,7 @@ class SalonModel {
         images: List<String>.from(json['images'] ?? []),
         phone: json['phone'],
         isActive: json['is_active'] ?? true,
+        city: json['city'] ?? '',
         openTime: json['open_time'] ?? '09:00',
         closeTime: json['close_time'] ?? '21:00',
       );

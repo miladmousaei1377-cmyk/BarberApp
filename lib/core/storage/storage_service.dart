@@ -62,6 +62,22 @@ class StorageService {
     await _prefs.setString(_keyCity, city);
   }
 
+  static const _keySelectedCities = 'selected_cities';
+
+  static List<String> get selectedCities {
+    final raw = _prefs.getString(_keySelectedCities);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      return List<String>.from(jsonDecode(raw));
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> setSelectedCities(List<String> cities) async {
+    await _prefs.setString(_keySelectedCities, jsonEncode(cities));
+  }
+
   /// Clears only auth data — does NOT reset onboarding flag.
   static Future<void> logout() async {
     await _prefs.remove(_keyToken);

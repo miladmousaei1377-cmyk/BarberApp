@@ -20,19 +20,47 @@ class _SalonListScreenState extends State<SalonListScreen> {
   String _sortBy = 'rating';
   bool _isLoading = false;
   LatLng? _userLatLng;
+  List<SalonModel>? _preFilteredSalons;
+  String _pageTitle = 'آرایشگاه‌ها';
 
   @override
   void initState() {
     super.initState();
     final args = Get.arguments;
-    if (args is LatLng) _userLatLng = args;
+    if (args is Map) {
+      final salons = args['salons'];
+      if (salons is List<SalonModel>) {
+        _preFilteredSalons = salons;
+      }
+      final title = args['title'];
+      if (title is String) _pageTitle = title;
+    } else if (args is LatLng) {
+      _userLatLng = args;
+    }
   }
 
   List<SalonModel> get _sortedSalons {
+    // If we have a pre-filtered list (from "مشاهده همه"), use it directly — no fallback
+    if (_preFilteredSalons != null) {
+      var list = _preFilteredSalons!.where((s) {
+        if (_selectedCategory == 'all') return true;
+        return s.categoryValue == _selectedCategory;
+      }).toList();
+      list = List.from(list);
+      switch (_sortBy) {
+        case 'rating':
+          list.sort((a, b) => b.rating.compareTo(a.rating));
+          break;
+        case 'reviews':
+          list.sort((a, b) => b.reviewCount.compareTo(a.reviewCount));
+          break;
+      }
+      return list;
+    }
+    // Original logic: all salons from MockData, optionally filtered by GPS
     var list = MockData.getSalonsByCategory(
       _selectedCategory == 'all' ? null : _selectedCategory,
     );
-    // Filter by proximity when GPS available (50km radius)
     if (_userLatLng != null) {
       const dist = Distance();
       list = list.where((s) {
@@ -175,7 +203,7 @@ class _SalonListScreenState extends State<SalonListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('آرایشگاه‌ها'),
+        title: Text(_pageTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_forward_ios),
           onPressed: () => Get.back(),
@@ -196,10 +224,21 @@ class _SalonListScreenState extends State<SalonListScreen> {
                 itemBuilder: (_, __) => const SalonCardShimmer(),
               )
             : _sortedSalons.isEmpty
-                ? const Center(
-                    child: Text(
-                      'آرایشگاهی یافت نشد',
-                      style: TextStyle(fontFamily: 'Vazirmatn', color: AppColors.textSecondary),
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.search_off,
+                            size: 56, color: AppColors.textSecondary),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'آرایشگاهی یافت نشد',
+                          style: TextStyle(
+                              fontFamily: 'Vazirmatn',
+                              color: AppColors.textSecondary,
+                              fontSize: 15),
+                        ),
+                      ],
                     ),
                   )
                 : ListView.builder(

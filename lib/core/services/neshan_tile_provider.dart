@@ -43,14 +43,25 @@ class _NeshanTileImage extends ImageProvider<_NeshanTileImage> {
     _NeshanTileImage key,
     ImageDecoderCallback decode,
   ) async {
-    final resp = await client
-        .get(Uri.parse(url), headers: {'Api-Key': MapConfig.neshanApiKey})
-        .timeout(const Duration(seconds: 10));
-    if (resp.statusCode != 200) {
-      throw Exception('Neshan tile HTTP ${resp.statusCode}');
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final resp = await client
+            .get(Uri.parse(url), headers: {'Api-Key': MapConfig.neshanApiKey})
+            .timeout(const Duration(seconds: 10));
+        if (resp.statusCode == 200) {
+          final buffer = await ui.ImmutableBuffer.fromUint8List(resp.bodyBytes);
+          return decode(buffer);
+        }
+        debugPrint(
+          '[Neshan] Tile error attempt ${attempt + 1}: '
+          'HTTP ${resp.statusCode} | ${resp.body.substring(0, resp.body.length.clamp(0, 200))} | $url',
+        );
+      } catch (e) {
+        debugPrint('[Neshan] Tile exception attempt ${attempt + 1}: $e | $url');
+      }
+      if (attempt == 0) await Future.delayed(const Duration(milliseconds: 500));
     }
-    final buffer = await ui.ImmutableBuffer.fromUint8List(resp.bodyBytes);
-    return decode(buffer);
+    throw Exception('[Neshan] Failed to load tile after 2 attempts: $url');
   }
 
   @override
