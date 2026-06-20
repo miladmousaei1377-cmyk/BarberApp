@@ -1,12 +1,24 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import '../config/map_config.dart';
 
-// Applies dark inversion: white → #3D3D3D, roads become light on dark background.
+// Neshan's SSL cert chain includes an Iranian CA not trusted by Android.
+// We bypass verification only for *.neshan.org hosts.
+http.Client _neshanClient() {
+  final inner = HttpClient()
+    ..badCertificateCallback =
+        (X509Certificate cert, String host, int port) =>
+            host.endsWith('neshan.org');
+  return IOClient(inner);
+}
+
+// Dark inversion: white → #3D3D3D, streets become light on dark background.
 const _kDark = ColorFilter.matrix(<double>[
   -1, 0, 0, 0, 316,
    0, -1, 0, 0, 316,
@@ -15,9 +27,8 @@ const _kDark = ColorFilter.matrix(<double>[
 ]);
 
 /// Pre-configured dark-themed Neshan tile layer.
-/// Converts to StatefulWidget to run a one-time diagnostic HTTP test that
-/// shows the API response status as a small badge — helps diagnose tile
-/// loading failures without needing adb logcat.
+/// Shows a small diagnostic badge (green/red) on the first map instance
+/// so SSL/auth issues are immediately visible without adb.
 class NeshanTileLayer extends StatefulWidget {
   const NeshanTileLayer({super.key});
 
@@ -26,9 +37,7 @@ class NeshanTileLayer extends StatefulWidget {
 }
 
 class _NeshanTileLayerState extends State<NeshanTileLayer> {
-  // Shared across all instances so we only hit the network once per session.
-  static String? _badge; // null = not tested yet
-
+  static String? _badge;
   String _localBadge = _badge ?? '';
 
   @override
@@ -38,33 +47,20 @@ class _NeshanTileLayerState extends State<NeshanTileLayer> {
   }
 
   Future<void> _runDiagnostic() async {
-    // Test tile: Tehran centre at zoom 12 (x=2632, y=1608)
+    // Tehran centre at zoom 12
     const testUrl = 'https://api.neshan.org/v4/tile/12/2632/1608.png';
-    final client = http.Client();
+    final client = _neshanClient();
     try {
-      // ① Header approach (what we use in tiles)
-      final r1 = await client
+      final resp = await client
           .get(Uri.parse(testUrl), headers: {'Api-Key': MapConfig.neshanApiKey})
-          .timeout(const Duration(seconds: 8));
-
-      String result;
-      if (r1.statusCode == 200) {
-        result = '✓ نقشه OK  (header, ${r1.bodyBytes.length}B)';
-      } else {
-        // ② Query-param fallback test
-        final r2 = await client
-            .get(Uri.parse('$testUrl?api-key=${MapConfig.neshanApiKey}'))
-            .timeout(const Duration(seconds: 8));
-        if (r2.statusCode == 200) {
-          result = '✓ نقشه OK (query, ${r2.bodyBytes.length}B)';
-        } else {
-          result = '✗ header:${r1.statusCode}  query:${r2.statusCode}';
-        }
-      }
+          .timeout(const Duration(seconds: 10));
+      final result = resp.statusCode == 200
+          ? '✓ نقشه OK (${resp.bodyBytes.length}B)'
+          : '✗ HTTP ${resp.statusCode}';
       _badge = result;
       if (mounted) setState(() => _localBadge = result);
     } catch (e) {
-      final result = '✗ خطای شبکه: $e';
+      final result = '✗ $e';
       _badge = result;
       if (mounted) setState(() => _localBadge = result);
     } finally {
@@ -122,16 +118,14 @@ class _DiagBadge extends StatelessWidget {
   }
 }
 
-/// Sends the Neshan API key via `Api-Key` header using the `http` package
-/// directly — bypasses Flutter's NetworkImage which ignores custom headers
-/// on Android.
+/// Tile provider that bypasses Android's SSL verification for neshan.org
+/// (Neshan uses an Iranian CA not included in the Android root store).
 class NeshanTileProvider extends TileProvider {
-  final _client = http.Client();
+  final _client = _neshanClient();
 
   @override
-  ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
-    return _NeshanTileImage(getTileUrl(coordinates, options), _client);
-  }
+  ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
+      _NeshanTileImage(getTileUrl(coordinates, options), _client);
 
   @override
   void dispose() {
@@ -166,21 +160,17 @@ class _NeshanTileImage extends ImageProvider<_NeshanTileImage> {
       try {
         final resp = await client
             .get(Uri.parse(url), headers: {'Api-Key': MapConfig.neshanApiKey})
-            .timeout(const Duration(seconds: 10));
+            .timeout(const Duration(seconds: 12));
         if (resp.statusCode == 200) {
           final buffer =
               await ui.ImmutableBuffer.fromUint8List(resp.bodyBytes);
           return decode(buffer);
         }
-        debugPrint(
-          '[Neshan] tile HTTP ${resp.statusCode} (attempt ${attempt + 1}) $url',
-        );
+        debugPrint('[Neshan] tile HTTP ${resp.statusCode} (attempt ${attempt+1}) $url');
       } catch (e) {
-        debugPrint('[Neshan] tile exception (attempt ${attempt + 1}): $e');
+        debugPrint('[Neshan] tile error (attempt ${attempt+1}): $e');
       }
-      if (attempt == 0) {
-        await Future.delayed(const Duration(milliseconds: 600));
-      }
+      if (attempt == 0) await Future.delayed(const Duration(milliseconds: 600));
     }
     throw Exception('[Neshan] tile failed after 2 attempts: $url');
   }
