@@ -9,7 +9,6 @@ import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../core/config/map_config.dart';
 import '../../../core/services/neshan_tile_provider.dart';
 import '../../../core/services/neshan_service.dart';
 import '../../../data/models/salon_model.dart';
@@ -170,14 +169,7 @@ class _MapScreenState extends State<MapScreen> {
                     },
                   ),
                   children: [
-                    TileLayer(
-                      urlTemplate: MapConfig.neshanTileUrl,
-                      tileProvider: NeshanTileProvider(),
-                      userAgentPackageName: 'com.barberbook.app',
-                      errorTileCallback: (tile, error, stackTrace) {
-                        // error already logged in NeshanTileProvider
-                      },
-                    ),
+                    const NeshanTileLayer(),
                     // Radius circle
                     if (_userLatLng != null)
                       TweenAnimationBuilder<double>(

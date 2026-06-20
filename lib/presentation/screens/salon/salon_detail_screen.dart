@@ -6,7 +6,6 @@ import 'package:animate_do/animate_do.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../core/config/map_config.dart';
 import '../../../core/services/neshan_tile_provider.dart';
 import '../../../core/utils/persian_utils.dart';
 import '../../../data/mock/mock_data.dart';
@@ -726,11 +725,7 @@ class _InfoTab extends StatelessWidget {
                   ),
                 ),
                 children: [
-                  TileLayer(
-                    urlTemplate: MapConfig.neshanTileUrl,
-                    tileProvider: NeshanTileProvider(),
-                    userAgentPackageName: 'com.barberbook.app',
-                  ),
+                  const NeshanTileLayer(),
                   MarkerLayer(
                     markers: [
                       Marker(

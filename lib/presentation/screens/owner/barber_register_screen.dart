@@ -7,7 +7,6 @@ import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
-import '../../../core/config/map_config.dart';
 import '../../../core/services/neshan_service.dart';
 import '../../../core/services/neshan_tile_provider.dart';
 import '../../../core/storage/storage_service.dart';
@@ -473,11 +472,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
                       interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                     ),
                     children: [
-                      TileLayer(
-                        urlTemplate: MapConfig.neshanTileUrl,
-                        tileProvider: NeshanTileProvider(),
-                        userAgentPackageName: 'com.barberbook.app',
-                      ),
+                      const NeshanTileLayer(),
                       MarkerLayer(
                         markers: [
                           Marker(

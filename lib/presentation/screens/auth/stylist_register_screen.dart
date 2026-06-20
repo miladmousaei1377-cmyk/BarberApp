@@ -7,7 +7,6 @@ import 'package:latlong2/latlong.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/auth_controller.dart';
-import '../../../core/config/map_config.dart';
 import '../../../core/services/neshan_tile_provider.dart';
 
 class StylistRegisterScreen extends StatefulWidget {
@@ -335,11 +334,7 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                           interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                         ),
                         children: [
-                          TileLayer(
-                            urlTemplate: MapConfig.neshanTileUrl,
-                            tileProvider: NeshanTileProvider(),
-                            userAgentPackageName: 'com.barberbook.app',
-                          ),
+                          const NeshanTileLayer(),
                           MarkerLayer(
                             markers: [
                               Marker(

@@ -12,7 +12,6 @@ import 'package:printing/printing.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../controllers/owner_controller.dart';
-import '../../../core/config/map_config.dart';
 import '../../../core/services/neshan_tile_provider.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/storage/storage_service.dart';
@@ -881,11 +880,7 @@ class _SalonInfoSubTab extends StatelessWidget {
                         interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                       ),
                       children: [
-                        TileLayer(
-                          urlTemplate: MapConfig.neshanTileUrl,
-                          tileProvider: NeshanTileProvider(),
-                          userAgentPackageName: 'com.barberbook.app',
-                        ),
+                        const NeshanTileLayer(),
                         MarkerLayer(
                           markers: [
                             Marker(
@@ -2765,11 +2760,7 @@ class _EditSalonSheetState extends State<_EditSalonSheet> {
                           interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                         ),
                         children: [
-                          TileLayer(
-                            urlTemplate: MapConfig.neshanTileUrl,
-                            tileProvider: NeshanTileProvider(),
-                            userAgentPackageName: 'com.barberbook.app',
-                          ),
+                          const NeshanTileLayer(),
                           MarkerLayer(
                             markers: [
                               Marker(

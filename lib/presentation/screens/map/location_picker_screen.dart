@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../app/theme/app_theme.dart';
-import '../../../core/config/map_config.dart';
 import '../../../core/services/neshan_tile_provider.dart';
 
 class LocationPickerScreen extends StatefulWidget {
@@ -65,11 +64,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               onTap: (_, latLng) => setState(() => _selected = latLng),
             ),
             children: [
-              TileLayer(
-                urlTemplate: MapConfig.neshanTileUrl,
-                tileProvider: NeshanTileProvider(),
-                userAgentPackageName: 'com.barberbook.app',
-              ),
+              const NeshanTileLayer(),
               if (_selected != null)
                 MarkerLayer(
                   markers: [
