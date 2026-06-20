@@ -38,9 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _selectedCities = StorageService.selectedCities;
-    _loadUserLocation();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_selectedCities.isEmpty) {
+    _loadUserLocation().then((_) {
+      // Only ask for city if GPS failed AND no city was previously saved.
+      if (mounted && _userPosition == null && _selectedCities.isEmpty) {
         _openCitySelector(firstTime: true);
       }
     });
@@ -77,9 +77,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String get _nearbySectionTitle {
-    if (_selectedCities.isEmpty) return 'نزدیک شما';
-    if (_selectedCities.length == 1) return 'در ${_selectedCities.first}';
-    return 'در ${_selectedCities.length} شهر';
+    if (_userPosition != null) return 'نزدیک شما';
+    if (_selectedCities.isNotEmpty) {
+      if (_selectedCities.length == 1) return 'در ${_selectedCities.first}';
+      return 'در ${_selectedCities.length} شهر';
+    }
+    return 'نزدیک شما';
   }
 
   List<SalonModel> get _filteredSalons {
@@ -95,40 +98,53 @@ class _HomeScreenState extends State<HomeScreen> {
     return salons;
   }
 
+  // Priority 1: GPS (always first, 20 km radius, sorted by distance)
+  // Priority 2: Selected cities if GPS unavailable (sorted by rating)
+  // Priority 3: Empty list — show empty-state UI
   List<SalonModel> get _nearbySalons {
     final withCoords =
         MockData.salons.where((s) => s.lat != 0.0 && s.lng != 0.0).toList();
 
-    // Cities selected → filter by salon.city membership
-    if (_selectedCities.isNotEmpty) {
-      final inCities = withCoords
-          .where((s) => _selectedCities.contains(s.city))
-          .toList()
-        ..sort((a, b) => b.rating.compareTo(a.rating));
-      return inCities;
-    }
-
-    // No city selected — filter by GPS (15 km)
     if (_userPosition != null) {
       const dist = Distance();
       final userLoc =
           LatLng(_userPosition!.latitude, _userPosition!.longitude);
-      final nearby = withCoords.where((s) {
-        final km =
-            dist.as(LengthUnit.Kilometer, userLoc, LatLng(s.lat, s.lng));
-        return km <= 15.0;
+      return withCoords.where((s) {
+        final km = dist.as(LengthUnit.Kilometer, userLoc, LatLng(s.lat, s.lng));
+        return km <= 20.0;
       }).toList()
         ..sort((a, b) {
-          final dA = dist.as(
-              LengthUnit.Kilometer, userLoc, LatLng(a.lat, a.lng));
-          final dB = dist.as(
-              LengthUnit.Kilometer, userLoc, LatLng(b.lat, b.lng));
+          final dA = dist.as(LengthUnit.Kilometer, userLoc, LatLng(a.lat, a.lng));
+          final dB = dist.as(LengthUnit.Kilometer, userLoc, LatLng(b.lat, b.lng));
           return dA.compareTo(dB);
         });
-      if (nearby.isNotEmpty) return nearby;
     }
 
-    return withCoords;
+    if (_selectedCities.isNotEmpty) {
+      return withCoords
+          .where((s) => _selectedCities.contains(s.city))
+          .toList()
+        ..sort((a, b) => b.rating.compareTo(a.rating));
+    }
+
+    return [];
+  }
+
+  // Salons in selected cities — shown as a separate "other cities" section
+  // when GPS is active and user also has cities selected.
+  List<SalonModel> get _citySalons {
+    if (_userPosition == null || _selectedCities.isEmpty) return [];
+    final withCoords =
+        MockData.salons.where((s) => s.lat != 0.0 && s.lng != 0.0).toList();
+    return withCoords
+        .where((s) => _selectedCities.contains(s.city))
+        .toList()
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+  }
+
+  String get _citySectionTitle {
+    if (_selectedCities.length == 1) return 'آرایشگاه‌های ${_selectedCities.first}';
+    return 'آرایشگاه‌های ${_selectedCities.length} شهر';
   }
 
   @override
@@ -139,8 +155,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onRefresh() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
+    await _loadUserLocation();
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -156,8 +172,11 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildHeader(user?.fullName ?? 'کاربر'),
             SliverToBoxAdapter(child: _buildSearch()),
             SliverToBoxAdapter(child: _buildCategories()),
-            if (_searchQuery.isEmpty)
+            if (_searchQuery.isEmpty) ...[
               SliverToBoxAdapter(child: _buildNearbySection()),
+              if (_citySalons.isNotEmpty)
+                SliverToBoxAdapter(child: _buildCitiesSection()),
+            ],
             SliverToBoxAdapter(child: _buildTopSalonsTitle()),
             _isLoading
                 ? SliverList(
@@ -375,6 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNearbySection() {
     final nearby = _nearbySalons;
     final sectionTitle = _nearbySectionTitle;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
@@ -394,13 +414,162 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const Spacer(),
+              if (nearby.isNotEmpty)
+                TextButton(
+                  onPressed: () => Get.toNamed(
+                    Routes.salonList,
+                    arguments: {'salons': nearby, 'title': sectionTitle},
+                  ),
+                  child: const Text(
+                    'مشاهده همه',
+                    style: TextStyle(
+                      fontFamily: 'Vazirmatn',
+                      fontSize: 13,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (nearby.isEmpty)
+            _buildNearbyEmptyState()
+          else
+            SizedBox(
+              height: 220,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                padding: EdgeInsets.zero,
+                itemCount: nearby.length,
+                itemBuilder: (_, i) => FadeInRight(
+                  delay: Duration(milliseconds: i * 100),
+                  child: SalonCard(
+                    salon: nearby[i],
+                    compact: true,
+                    onTap: () => Get.toNamed(Routes.salonDetail,
+                        arguments: nearby[i]),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNearbyEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.location_searching,
+              size: 48, color: AppColors.textSecondary),
+          const SizedBox(height: 12),
+          const Text(
+            'آرایشگاهی نزدیک شما یافت نشد',
+            style: TextStyle(
+              fontFamily: 'Vazirmatn',
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'دسترسی موقعیت را فعال کنید یا شهر مدنظر را انتخاب کنید',
+            style: TextStyle(
+              fontFamily: 'Vazirmatn',
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _loadUserLocation().then((_) {
+                  if (mounted) setState(() {});
+                }),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.secondary,
+                  side: const BorderSide(color: AppColors.secondary),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                ),
+                icon: const Icon(Icons.my_location, size: 16),
+                label: const Text('فعال‌سازی موقعیت',
+                    style: TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton.icon(
+                onPressed: () => _openCitySelector(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                ),
+                icon: const Icon(Icons.location_city, size: 16),
+                label: const Text('انتخاب شهر',
+                    style: TextStyle(
+                        fontFamily: 'Vazirmatn',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCitiesSection() {
+    final salons = _citySalons;
+    final title = _citySectionTitle;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.location_city,
+                  color: AppColors.secondary, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Vazirmatn',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               TextButton(
                 onPressed: () => Get.toNamed(
                   Routes.salonList,
-                  arguments: {
-                    'salons': nearby,
-                    'title': sectionTitle,
-                  },
+                  arguments: {'salons': salons, 'title': title},
                 ),
                 child: const Text(
                   'مشاهده همه',
@@ -420,14 +589,14 @@ class _HomeScreenState extends State<HomeScreen> {
               scrollDirection: Axis.horizontal,
               reverse: true,
               padding: EdgeInsets.zero,
-              itemCount: nearby.length,
+              itemCount: salons.length,
               itemBuilder: (_, i) => FadeInRight(
                 delay: Duration(milliseconds: i * 100),
                 child: SalonCard(
-                  salon: nearby[i],
+                  salon: salons[i],
                   compact: true,
-                  onTap: () => Get.toNamed(Routes.salonDetail,
-                      arguments: nearby[i]),
+                  onTap: () =>
+                      Get.toNamed(Routes.salonDetail, arguments: salons[i]),
                 ),
               ),
             ),
@@ -459,10 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
           TextButton(
             onPressed: () => Get.toNamed(
               Routes.salonList,
-              arguments: {
-                'salons': topSalons,
-                'title': 'برترین‌ها',
-              },
+              arguments: {'salons': topSalons, 'title': 'برترین‌ها'},
             ),
             child: const Text(
               'مشاهده همه',

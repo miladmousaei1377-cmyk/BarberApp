@@ -2,13 +2,15 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import '../config/map_config.dart';
 
-// Lifts blacks by +60/255 ≈ 24%:  pure black → #3C3C3C (medium grey like Divar).
-// Whites stay white (255+60 clamped to 255). Streets become visible grey lines.
+// Lifts blacks (+45) and boosts contrast (×1.2) so:
+//   black  → #2D2D2D (dark grey background)
+//   white  → 255     (map labels stay pure white)
+//   near-white (≥175) → clamped to 255  (ensures text is clearly white)
 const _kLift = ColorFilter.matrix(<double>[
-  1, 0, 0, 0, 60,
-  0, 1, 0, 0, 60,
-  0, 0, 1, 0, 60,
-  0, 0, 0, 1,  0,
+  1.2, 0,   0,   0, 45,
+  0,   1.2, 0,   0, 45,
+  0,   0,   1.2, 0, 45,
+  0,   0,   0,   1,  0,
 ]);
 
 /// Dark map tile layer — CartoDB Dark Matter with brightness lift to match
