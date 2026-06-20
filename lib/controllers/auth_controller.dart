@@ -112,11 +112,12 @@ class AuthController extends GetxController {
   Future<bool> registerStylist({
     required String name,
     required String phone,
-    required String email,
+    String? email,
     required String password,
     required String guildCode,
     required String salonName,
     required String salonAddress,
+    String? nationalCode,
   }) async {
     isLoading.value = true;
     errorMsg.value = '';
@@ -128,17 +129,20 @@ class AuthController extends GetxController {
       return false;
     }
 
-    if (MockData.users.any((u) => u.email?.toLowerCase() == email.trim().toLowerCase())) {
-      isLoading.value = false;
-      errorMsg.value = 'این ایمیل قبلاً ثبت شده است';
-      return false;
+    final trimmedEmail = email?.trim();
+    if (trimmedEmail != null && trimmedEmail.isNotEmpty) {
+      if (MockData.users.any((u) => u.email?.toLowerCase() == trimmedEmail.toLowerCase())) {
+        isLoading.value = false;
+        errorMsg.value = 'این ایمیل قبلاً ثبت شده است';
+        return false;
+      }
     }
 
     final user = UserModel(
       id: 'b_${DateTime.now().millisecondsSinceEpoch}',
       fullName: name.trim(),
       phone: phone.trim(),
-      email: email.trim().toLowerCase(),
+      email: (trimmedEmail != null && trimmedEmail.isNotEmpty) ? trimmedEmail.toLowerCase() : null,
       password: password,
       role: UserRole.barber,
       stylistStatus: 'pending',

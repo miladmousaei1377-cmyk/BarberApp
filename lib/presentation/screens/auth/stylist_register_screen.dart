@@ -20,6 +20,7 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _nationalCodeCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _guildCodeCtrl = TextEditingController();
@@ -37,12 +38,15 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
     _auth = Get.find<AuthController>() is AuthController
         ? Get.find<AuthController>()
         : Get.put(AuthController());
+    _auth.clearError();
   }
 
   @override
   void dispose() {
+    _auth.clearError();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _nationalCodeCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _guildCodeCtrl.dispose();
@@ -66,7 +70,8 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
     final ok = await _auth.registerStylist(
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
-      email: _emailCtrl.text.trim(),
+      nationalCode: _nationalCodeCtrl.text.trim(),
+      email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
       password: _passwordCtrl.text,
       guildCode: _guildCodeCtrl.text.trim(),
       salonName: _salonNameCtrl.text.trim(),
@@ -134,12 +139,25 @@ class _StylistRegisterScreenState extends State<StylistRegisterScreen> {
                 ),
                 const SizedBox(height: 14),
                 _AuthField(
+                  controller: _nationalCodeCtrl,
+                  label: 'کد ملی',
+                  icon: Icons.badge_outlined,
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v == null || !RegExp(r'^\d{10}$').hasMatch(v.trim())) {
+                      return 'کد ملی باید ۱۰ رقم باشد';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 14),
+                _AuthField(
                   controller: _emailCtrl,
-                  label: 'ایمیل',
+                  label: 'ایمیل (اختیاری)',
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'ایمیل الزامی است';
+                    if (v == null || v.trim().isEmpty) return null;
                     if (!v.contains('@')) return 'ایمیل نامعتبر است';
                     return null;
                   },

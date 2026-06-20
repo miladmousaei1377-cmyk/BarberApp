@@ -26,6 +26,7 @@ class _StylistLoginScreenState extends State<StylistLoginScreen> {
   void initState() {
     super.initState();
     _auth = Get.put(AuthController());
+    _auth.clearError();
     _checkBiometric();
   }
 
@@ -61,6 +62,7 @@ class _StylistLoginScreenState extends State<StylistLoginScreen> {
 
   @override
   void dispose() {
+    _auth.clearError();
     _loginCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();

@@ -27,6 +27,12 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
   Future<void> _goToMyLocation() async {
     LocationPermission perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) {
@@ -35,9 +41,10 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     if (perm == LocationPermission.deniedForever || perm == LocationPermission.denied) return;
     try {
       final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      if (!mounted) return;
       final ll = LatLng(pos.latitude, pos.longitude);
       setState(() => _selected = ll);
-      _mapController.move(ll, 15);
+      try { _mapController.move(ll, 15); } catch (_) {}
     } catch (_) {}
   }
 

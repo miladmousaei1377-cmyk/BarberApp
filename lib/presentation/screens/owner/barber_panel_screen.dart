@@ -579,6 +579,50 @@ class _AllApts extends StatefulWidget {
 
 class _AllAptsState extends State<_AllApts> {
   AppointmentStatus? _filter;
+  bool _selecting = false;
+  final Set<String> _selected = {};
+
+  void _enterSelectMode() => setState(() { _selecting = true; _selected.clear(); });
+  void _exitSelectMode() => setState(() { _selecting = false; _selected.clear(); });
+
+  Future<void> _deleteSelected(BuildContext context, List apts) async {
+    final count = _selected.length;
+    final hasActive = apts.where((a) => _selected.contains(a.id)).any((a) => a.status == AppointmentStatus.pending || a.status == AppointmentStatus.confirmed);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('حذف نوبت‌ها', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('آیا ${PersianUtils.toPersianDigits(count.toString())} نوبت انتخاب‌شده حذف شود؟', style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14)),
+              if (hasActive) ...[
+                const SizedBox(height: 8),
+                const Text('⚠️ برخی نوبت‌های انتخاب‌شده فعال هستند.', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12, color: _kWarning)),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey))),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: _kDanger, foregroundColor: Colors.white),
+              child: const Text('حذف', style: TextStyle(fontFamily: 'Vazirmatn')),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true) return;
+    final ids = List<String>.from(_selected);
+    for (final id in ids) OwnerController.to.deleteAppointment(id);
+    Get.snackbar('حذف شد', '${PersianUtils.toPersianDigits(count.toString())} نوبت حذف شد', backgroundColor: _kDanger, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    _exitSelectMode();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -589,6 +633,8 @@ class _AllAptsState extends State<_AllApts> {
         final d = b.date.compareTo(a.date);
         return d != 0 ? d : b.startTime.compareTo(a.startTime);
       });
+      final allSelected = apts.isNotEmpty && apts.every((a) => _selected.contains(a.id));
+
       return Column(
         children: [
           SingleChildScrollView(
@@ -608,6 +654,45 @@ class _AllAptsState extends State<_AllApts> {
               ],
             ),
           ),
+          if (_selecting)
+            Container(
+              color: _kPrimary.withOpacity(0.07),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: allSelected,
+                    activeColor: _kPrimary,
+                    onChanged: (v) => setState(() {
+                      if (v == true) _selected.addAll(apts.map((a) => a.id));
+                      else _selected.clear();
+                    }),
+                  ),
+                  Text(
+                    allSelected ? 'لغو انتخاب همه' : 'انتخاب همه',
+                    style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: _kPrimary),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _exitSelectMode,
+                    child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+                  ),
+                ],
+              ),
+            )
+          else if (apts.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _enterSelectMode,
+                  icon: const Icon(Icons.checklist_outlined, size: 18),
+                  label: const Text('انتخاب چندتایی', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12)),
+                  style: TextButton.styleFrom(foregroundColor: _kPrimary),
+                ),
+              ),
+            ),
           Expanded(
             child: apts.isEmpty
                 ? const _EmptyState(message: 'نوبتی یافت نشد', icon: Icons.search_off_outlined)
@@ -616,6 +701,33 @@ class _AllAptsState extends State<_AllApts> {
                     itemCount: apts.length,
                     itemBuilder: (_, i) {
                       final apt = apts[i];
+                      if (_selecting) {
+                        final isSelected = _selected.contains(apt.id);
+                        return GestureDetector(
+                          onTap: () => setState(() {
+                            if (isSelected) _selected.remove(apt.id); else _selected.add(apt.id);
+                          }),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: isSelected ? _kPrimary : Colors.transparent, width: 2),
+                            ),
+                            child: Row(
+                              children: [
+                                Checkbox(
+                                  value: isSelected,
+                                  activeColor: _kPrimary,
+                                  onChanged: (v) => setState(() {
+                                    if (v == true) _selected.add(apt.id); else _selected.remove(apt.id);
+                                  }),
+                                ),
+                                Expanded(child: _AptCard(apt: apt, showActions: false)),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
                       return Dismissible(
                         key: Key(apt.id),
                         direction: DismissDirection.endToStart,
@@ -654,6 +766,30 @@ class _AllAptsState extends State<_AllApts> {
                     },
                   ),
           ),
+          if (_selecting)
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, -2))],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: _selected.isEmpty ? null : () => _deleteSelected(context, apts),
+                icon: const Icon(Icons.delete_outline),
+                label: Text(
+                  _selected.isEmpty ? 'نوبتی انتخاب نشده' : 'حذف ${PersianUtils.toPersianDigits(_selected.length.toString())} نوبت',
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kDanger,
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
         ],
       );
     });
@@ -1012,9 +1148,48 @@ class _SalonInfoSubTab extends StatelessWidget {
 
 // ── Sub-tab: Services ─────────────────────────────────────────────────────────
 
-class _ServicesSubTab extends StatelessWidget {
+class _ServicesSubTab extends StatefulWidget {
   final void Function(BuildContext, {ServiceModel? editing}) onShowSheet;
   const _ServicesSubTab({required this.onShowSheet});
+
+  @override
+  State<_ServicesSubTab> createState() => _ServicesSubTabState();
+}
+
+class _ServicesSubTabState extends State<_ServicesSubTab> {
+  bool _selecting = false;
+  final Set<String> _selected = {};
+
+  void _enterSelectMode() => setState(() { _selecting = true; _selected.clear(); });
+  void _exitSelectMode() => setState(() { _selecting = false; _selected.clear(); });
+
+  Future<void> _deleteSelected(BuildContext context) async {
+    final count = _selected.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('حذف خدمات', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+          content: Text('آیا ${PersianUtils.toPersianDigits(count.toString())} خدمت انتخاب‌شده حذف شود؟', style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey))),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(backgroundColor: _kDanger, foregroundColor: Colors.white),
+              child: const Text('حذف', style: TextStyle(fontFamily: 'Vazirmatn')),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true) return;
+    final ids = List<String>.from(_selected);
+    for (final id in ids) OwnerController.to.deleteService(id);
+    Get.snackbar('حذف شد', '${PersianUtils.toPersianDigits(count.toString())} خدمت حذف شد', backgroundColor: _kDanger, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    _exitSelectMode();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1033,7 +1208,7 @@ class _ServicesSubTab extends StatelessWidget {
                 onPressed: () async {
                   final result = await Get.toNamed(Routes.barberRegister);
                   if (result == 'addServices' && context.mounted) {
-                    onShowSheet(context);
+                    widget.onShowSheet(context);
                   }
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
@@ -1054,7 +1229,7 @@ class _ServicesSubTab extends StatelessWidget {
               const Text('خدماتی اضافه نکرده‌اید', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: Colors.grey)),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: () => onShowSheet(context),
+                onPressed: () => widget.onShowSheet(context),
                 style: ElevatedButton.styleFrom(backgroundColor: _kPrimary, foregroundColor: Colors.white),
                 icon: const Icon(Icons.add),
                 label: const Text('افزودن خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
@@ -1063,45 +1238,146 @@ class _ServicesSubTab extends StatelessWidget {
           ),
         );
       }
-      return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-        itemCount: svcs.length,
-        itemBuilder: (_, i) {
-          final svc = svcs[i];
-          return Dismissible(
-            key: Key(svc.id),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: BoxDecoration(color: _kDanger, borderRadius: BorderRadius.circular(12)),
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.only(left: 20),
-              child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
-            ),
-            confirmDismiss: (_) async {
-              return await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('حذف خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
-                  content: Text('آیا خدمت "${svc.name}" حذف شود؟', style: const TextStyle(fontFamily: 'Vazirmatn')),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('خیر', style: TextStyle(fontFamily: 'Vazirmatn'))),
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('بله، حذف شود', style: TextStyle(fontFamily: 'Vazirmatn', color: _kDanger)),
-                    ),
-                  ],
+
+      final allSelected = svcs.every((s) => _selected.contains(s.id));
+
+      return Column(
+        children: [
+          if (_selecting)
+            Container(
+              color: _kPrimary.withOpacity(0.07),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  Checkbox(
+                    value: allSelected,
+                    activeColor: _kPrimary,
+                    onChanged: (v) => setState(() {
+                      if (v == true) _selected.addAll(svcs.map((s) => s.id));
+                      else _selected.clear();
+                    }),
+                  ),
+                  Text(
+                    allSelected ? 'لغو انتخاب همه' : 'انتخاب همه',
+                    style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 13, color: _kPrimary),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: _exitSelectMode,
+                    child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey)),
+                  ),
+                ],
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _enterSelectMode,
+                  icon: const Icon(Icons.checklist_outlined, size: 18),
+                  label: const Text('انتخاب چندتایی', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 12)),
+                  style: TextButton.styleFrom(foregroundColor: _kPrimary),
                 ),
-              );
-            },
-            onDismissed: (_) => ctrl.deleteService(svc.id),
-            child: _ServiceCard(
-              service: svc,
-              onEdit: () => onShowSheet(context, editing: svc),
-              onToggle: () => ctrl.updateService(svc.copyWith(isActive: !svc.isActive)),
+              ),
             ),
-          );
-        },
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+              itemCount: svcs.length,
+              itemBuilder: (_, i) {
+                final svc = svcs[i];
+                if (_selecting) {
+                  final isSelected = _selected.contains(svc.id);
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      if (isSelected) _selected.remove(svc.id); else _selected.add(svc.id);
+                    }),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: isSelected ? _kPrimary : Colors.transparent, width: 2),
+                      ),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: isSelected,
+                            activeColor: _kPrimary,
+                            onChanged: (v) => setState(() {
+                              if (v == true) _selected.add(svc.id); else _selected.remove(svc.id);
+                            }),
+                          ),
+                          Expanded(
+                            child: _ServiceCard(service: svc, onEdit: () {}, onToggle: () {}),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return Dismissible(
+                  key: Key(svc.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    decoration: BoxDecoration(color: _kDanger, borderRadius: BorderRadius.circular(12)),
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.only(left: 20),
+                    child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
+                  ),
+                  confirmDismiss: (_) async {
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('حذف خدمت', style: TextStyle(fontFamily: 'Vazirmatn')),
+                        content: Text('آیا خدمت "${svc.name}" حذف شود؟', style: const TextStyle(fontFamily: 'Vazirmatn')),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('خیر', style: TextStyle(fontFamily: 'Vazirmatn'))),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('بله، حذف شود', style: TextStyle(fontFamily: 'Vazirmatn', color: _kDanger)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  onDismissed: (_) => ctrl.deleteService(svc.id),
+                  child: _ServiceCard(
+                    service: svc,
+                    onEdit: () => widget.onShowSheet(context, editing: svc),
+                    onToggle: () => ctrl.updateService(svc.copyWith(isActive: !svc.isActive)),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (_selecting)
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, -2))],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: _selected.isEmpty ? null : () => _deleteSelected(context),
+                icon: const Icon(Icons.delete_outline),
+                label: Text(
+                  _selected.isEmpty ? 'خدمتی انتخاب نشده' : 'حذف ${PersianUtils.toPersianDigits(_selected.length.toString())} خدمت',
+                  style: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kDanger,
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+        ],
       );
     });
   }
@@ -1658,15 +1934,91 @@ class _OwnerProfileTabState extends State<_OwnerProfileTab> {
   }
 
   Future<void> _pickAvatar() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked == null) return;
     final u = StorageService.getUser();
     if (u == null) return;
-    final updated = u.copyWith(avatarUrl: picked.path);
+
+    // Returns ImageSource for pick, 'delete' string for delete intent, null for dismiss.
+    final result = await showModalBottomSheet<Object>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 16),
+              const Text('ویرایش تصویر پروفایل', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFEEF2FF), child: Icon(Icons.camera_alt_outlined, color: _kPrimary)),
+                title: const Text('دوربین', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15)),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFEEF2FF), child: Icon(Icons.photo_library_outlined, color: _kPrimary)),
+                title: const Text('گالری', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15)),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              if (u.avatarUrl != null)
+                ListTile(
+                  leading: const CircleAvatar(backgroundColor: Color(0xFFFFEEEE), child: Icon(Icons.delete_outline, color: _kDanger)),
+                  title: const Text('حذف تصویر', style: TextStyle(fontFamily: 'Vazirmatn', fontSize: 15, color: _kDanger)),
+                  onTap: () => Navigator.pop(ctx, 'delete'),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == 'delete') {
+      final del = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('حذف تصویر', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+            content: const Text('آیا تصویر پروفایل حذف شود؟', style: TextStyle(fontFamily: 'Vazirmatn')),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn', color: Colors.grey))),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(backgroundColor: _kDanger, foregroundColor: Colors.white),
+                child: const Text('حذف', style: TextStyle(fontFamily: 'Vazirmatn')),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (del != true || !mounted) return;
+      await _applyAvatar(u, null);
+      return;
+    }
+
+    if (result is! ImageSource) return;
+    final picked = await ImagePicker().pickImage(source: result, imageQuality: 80);
+    if (picked == null || !mounted) return;
+    await _applyAvatar(u, picked.path);
+  }
+
+  Future<void> _applyAvatar(user, String? path) async {
+    final updated = user.copyWith(avatarUrl: path);
     await StorageService.saveUser(updated);
-    final idx = MockData.users.indexWhere((x) => x.id == u.id);
+    final idx = MockData.users.indexWhere((x) => x.id == user.id);
     if (idx != -1) MockData.users[idx] = updated;
-    // Update the auto-created stylist's avatar too
     final ctrl = OwnerController.to;
     final salonId = ctrl.salon.value?.id;
     if (salonId != null) {
@@ -1676,14 +2028,14 @@ class _OwnerProfileTabState extends State<_OwnerProfileTab> {
           id: MockData.stylists[sIdx].id,
           salonId: MockData.stylists[sIdx].salonId,
           name: MockData.stylists[sIdx].name,
-          avatar: picked.path,
+          avatar: path,
           specialty: MockData.stylists[sIdx].specialty,
           rating: MockData.stylists[sIdx].rating,
         );
       }
     }
     DataService.saveAll();
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override

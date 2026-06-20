@@ -28,10 +28,12 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
     _auth = Get.find<AuthController>() is AuthController
         ? Get.find<AuthController>()
         : Get.put(AuthController());
+    _auth.clearError();
   }
 
   @override
   void dispose() {
+    _auth.clearError();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
