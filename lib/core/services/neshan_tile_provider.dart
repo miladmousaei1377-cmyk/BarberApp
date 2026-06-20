@@ -6,7 +6,42 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import '../config/map_config.dart';
 
-// Dark inversion: white → #3D3D3D, streets become light on dark background.
+// Tile URL candidates to probe — first 200-OK wins.
+// SSL bypass for *.neshan.org is handled globally via HttpOverrides in main.dart.
+const _kCandidates = [
+  // Dedicated tile subdomain — night & day styles
+  'https://tile.neshan.org/v1/neshan-night/256/12/2632/1608',
+  'https://tile.neshan.org/v1/neshan-day/256/12/2632/1608',
+  'https://tile.neshan.org/v1/standard-night/256/12/2632/1608',
+  'https://tile.neshan.org/v1/standard/256/12/2632/1608',
+  // api subdomain variants
+  'https://api.neshan.org/v4/map/12/2632/1608.png',
+  'https://api.neshan.org/v4/tiles/12/2632/1608.png',
+  'https://api.neshan.org/v4/tile/12/2632/1608.png',
+];
+
+// URL templates that correspond to each candidate (placeholders for flutter_map)
+const _kTemplates = {
+  'tile.neshan.org/v1/neshan-night': 'https://tile.neshan.org/v1/neshan-night/256/{z}/{x}/{y}',
+  'tile.neshan.org/v1/neshan-day':   'https://tile.neshan.org/v1/neshan-day/256/{z}/{x}/{y}',
+  'tile.neshan.org/v1/standard-night': 'https://tile.neshan.org/v1/standard-night/256/{z}/{x}/{y}',
+  'tile.neshan.org/v1/standard':     'https://tile.neshan.org/v1/standard/256/{z}/{x}/{y}',
+  'api.neshan.org/v4/map':           'https://api.neshan.org/v4/map/{z}/{x}/{y}.png',
+  'api.neshan.org/v4/tiles':         'https://api.neshan.org/v4/tiles/{z}/{x}/{y}.png',
+  'api.neshan.org/v4/tile':          'https://api.neshan.org/v4/tile/{z}/{x}/{y}.png',
+};
+
+String _templateFor(String candidate) {
+  for (final e in _kTemplates.entries) {
+    if (candidate.contains(e.key)) return e.value;
+  }
+  return MapConfig.neshanTileUrl;
+}
+
+bool _isNightStyle(String url) =>
+    url.contains('night') || url.contains('Night');
+
+// Dark inversion fallback — used only when night tiles are unavailable.
 const _kDark = ColorFilter.matrix(<double>[
   -1, 0, 0, 0, 316,
    0, -1, 0, 0, 316,
@@ -14,7 +49,8 @@ const _kDark = ColorFilter.matrix(<double>[
    0, 0,  0, 1,   0,
 ]);
 
-/// Pre-configured dark Neshan tile layer with a one-time diagnostic badge.
+/// Dark Neshan tile layer. Auto-detects the correct tile URL on first load
+/// and shows a badge with the result.
 class NeshanTileLayer extends StatefulWidget {
   const NeshanTileLayer({super.key});
 
@@ -24,45 +60,63 @@ class NeshanTileLayer extends StatefulWidget {
 
 class _NeshanTileLayerState extends State<NeshanTileLayer> {
   static String? _badge;
+  static String? _workingTemplate; // discovered at runtime
+
   String _localBadge = _badge ?? '';
+  String _activeTemplate = _workingTemplate ?? MapConfig.neshanTileUrl;
+  bool _useColorFilter = !_isNightStyle(_workingTemplate ?? '');
 
   @override
   void initState() {
     super.initState();
-    if (_badge == null) _runDiagnostic();
+    if (_badge == null) _probe();
   }
 
-  Future<void> _runDiagnostic() async {
-    // Tehran centre at zoom 12
-    const testUrl = 'https://api.neshan.org/v4/tile/12/2632/1608.png';
-    try {
-      final resp = await http
-          .get(Uri.parse(testUrl), headers: {'Api-Key': MapConfig.neshanApiKey})
-          .timeout(const Duration(seconds: 10));
-      final result = resp.statusCode == 200
-          ? '✓ نقشه OK (${resp.bodyBytes.length}B)'
-          : '✗ HTTP ${resp.statusCode}';
-      _badge = result;
-      if (mounted) setState(() => _localBadge = result);
-    } catch (e) {
-      final result = '✗ $e';
-      _badge = result;
-      if (mounted) setState(() => _localBadge = result);
+  Future<void> _probe() async {
+    for (final url in _kCandidates) {
+      try {
+        final resp = await http
+            .get(Uri.parse(url), headers: {'Api-Key': MapConfig.neshanApiKey})
+            .timeout(const Duration(seconds: 8));
+        if (resp.statusCode == 200 && resp.bodyBytes.length > 500) {
+          final template = _templateFor(url);
+          final night = _isNightStyle(url);
+          final badge =
+              '✓ OK — ${url.replaceAll('https://', '').split('/').take(4).join('/')}';
+          _badge = badge;
+          _workingTemplate = template;
+          if (mounted) {
+            setState(() {
+              _localBadge = badge;
+              _activeTemplate = template;
+              _useColorFilter = !night;
+            });
+          }
+          return;
+        }
+        debugPrint('[Neshan] probe ${resp.statusCode} $url');
+      } catch (e) {
+        debugPrint('[Neshan] probe error $url: $e');
+      }
     }
+    const fail = '✗ نقشه: همه آدرس‌ها ۴۰۴/خطا';
+    _badge = fail;
+    if (mounted) setState(() => _localBadge = fail);
   }
 
   @override
   Widget build(BuildContext context) {
+    final layer = TileLayer(
+      urlTemplate: _activeTemplate,
+      tileProvider: NeshanTileProvider(),
+      userAgentPackageName: 'com.barberbook.app',
+    );
+
     return Stack(
       children: [
-        ColorFiltered(
-          colorFilter: _kDark,
-          child: TileLayer(
-            urlTemplate: MapConfig.neshanTileUrl,
-            tileProvider: NeshanTileProvider(),
-            userAgentPackageName: 'com.barberbook.app',
-          ),
-        ),
+        _useColorFilter
+            ? ColorFiltered(colorFilter: _kDark, child: layer)
+            : layer,
         if (_localBadge.isNotEmpty)
           Positioned(
             bottom: 2,
@@ -101,7 +155,7 @@ class _DiagBadge extends StatelessWidget {
   }
 }
 
-/// Tile provider — SSL bypass is handled globally via HttpOverrides in main.dart.
+/// Tile provider — SSL bypass handled globally via HttpOverrides in main.dart.
 class NeshanTileProvider extends TileProvider {
   final _client = http.Client();
 
@@ -154,7 +208,7 @@ class _NeshanTileImage extends ImageProvider<_NeshanTileImage> {
       }
       if (attempt == 0) await Future.delayed(const Duration(milliseconds: 600));
     }
-    throw Exception('[Neshan] tile failed after 2 attempts: $url');
+    throw Exception('[Neshan] tile failed: $url');
   }
 
   @override
