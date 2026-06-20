@@ -713,7 +713,7 @@ class _SalonManagementTabState extends State<_SalonManagementTab> with SingleTic
         automaticallyImplyLeading: false,
         backgroundColor: _kPrimary,
         foregroundColor: Colors.white,
-        title: const Text('آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+        title: const Text('آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: Colors.white)),
         actions: [
           if (onServicesTab)
             IconButton(
@@ -967,6 +967,41 @@ class _SalonInfoSubTab extends StatelessWidget {
                 );
               }),
             ),
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (_) => Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: AlertDialog(
+                    title: const Text('حذف آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                    content: const Text('آیا مطمئن هستید که می‌خواهید آرایشگاه را حذف کنید؟ این عمل غیرقابل برگشت است.', style: TextStyle(fontFamily: 'Vazirmatn')),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('انصراف', style: TextStyle(fontFamily: 'Vazirmatn')),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('حذف', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              if (confirmed == true) OwnerController.to.removeSalon();
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              minimumSize: const Size.fromHeight(48),
+            ),
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('حذف آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w600)),
           ),
           const SizedBox(height: 24),
         ],

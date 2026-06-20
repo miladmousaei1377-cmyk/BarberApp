@@ -103,6 +103,19 @@ class OwnerController extends GetxController {
     DataService.saveAll();
   }
 
+  void removeSalon() {
+    final salonId = salon.value?.id;
+    if (salonId == null) return;
+    MockData.salons.removeWhere((s) => s.id == salonId);
+    MockData.stylists.removeWhere((s) => s.salonId == salonId);
+    MockData.services.removeWhere((s) => s.salonId == salonId);
+    MockData.appointments.removeWhere((a) => a.salonId == salonId);
+    salon.value = null;
+    services.clear();
+    appointments.clear();
+    DataService.saveAll();
+  }
+
   void updateWorkingDay(int dayIdx, WorkingDay updated) {
     workingHours[dayIdx] = updated;
     workingHours.refresh();
