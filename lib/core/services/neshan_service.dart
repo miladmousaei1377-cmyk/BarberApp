@@ -1,33 +1,24 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
 import 'package:latlong2/latlong.dart';
 import '../config/map_config.dart';
 import '../../data/mock/mock_data.dart';
 import '../../data/models/salon_model.dart';
 
+// SSL bypass for *.neshan.org is handled globally via HttpOverrides in main.dart.
+
 class NeshanService {
   static const _headers = {'Api-Key': MapConfig.neshanApiKey};
-
-  // Bypass Iranian CA certificate not trusted by Android
-  static http.Client _client() {
-    final inner = HttpClient()
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) =>
-              host.endsWith('neshan.org');
-    return IOClient(inner);
-  }
 
   /// Geocode a Persian address → LatLng; returns null on failure.
   static Future<LatLng?> geocodeAddress(String address) async {
     if (address.trim().isEmpty) return null;
-    final client = _client();
     try {
       final uri = Uri.parse(MapConfig.neshanGeocodeUrl)
           .replace(queryParameters: {'address': address});
-      final resp = await client.get(uri, headers: _headers)
+      final resp = await http
+          .get(uri, headers: _headers)
           .timeout(const Duration(seconds: 8));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -39,10 +30,7 @@ class NeshanService {
           );
         }
       }
-    } catch (_) {
-    } finally {
-      client.close();
-    }
+    } catch (_) {}
     return null;
   }
 

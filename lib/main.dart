@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -8,7 +9,22 @@ import 'core/storage/data_service.dart';
 import 'data/mock/mock_data.dart';
 import 'data/models/user_model.dart';
 
+// Neshan's SSL cert chain is rooted in an Iranian CA not trusted by Android.
+// This global override accepts any certificate from *.neshan.org at the
+// Dart VM level — more reliable than per-client badCertificateCallback.
+class _NeshanSslOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) =>
+              host.endsWith('neshan.org');
+  }
+}
+
 void main() async {
+  HttpOverrides.global = _NeshanSslOverrides();
+
   WidgetsFlutterBinding.ensureInitialized();
 
   await StorageService.init();

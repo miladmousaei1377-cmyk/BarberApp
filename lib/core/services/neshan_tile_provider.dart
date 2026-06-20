@@ -1,22 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
 import '../config/map_config.dart';
-
-// Neshan's SSL cert chain includes an Iranian CA not trusted by Android.
-// We bypass verification only for *.neshan.org hosts.
-http.Client _neshanClient() {
-  final inner = HttpClient()
-    ..badCertificateCallback =
-        (X509Certificate cert, String host, int port) =>
-            host.endsWith('neshan.org');
-  return IOClient(inner);
-}
 
 // Dark inversion: white → #3D3D3D, streets become light on dark background.
 const _kDark = ColorFilter.matrix(<double>[
@@ -26,9 +14,7 @@ const _kDark = ColorFilter.matrix(<double>[
    0, 0,  0, 1,   0,
 ]);
 
-/// Pre-configured dark-themed Neshan tile layer.
-/// Shows a small diagnostic badge (green/red) on the first map instance
-/// so SSL/auth issues are immediately visible without adb.
+/// Pre-configured dark Neshan tile layer with a one-time diagnostic badge.
 class NeshanTileLayer extends StatefulWidget {
   const NeshanTileLayer({super.key});
 
@@ -49,9 +35,8 @@ class _NeshanTileLayerState extends State<NeshanTileLayer> {
   Future<void> _runDiagnostic() async {
     // Tehran centre at zoom 12
     const testUrl = 'https://api.neshan.org/v4/tile/12/2632/1608.png';
-    final client = _neshanClient();
     try {
-      final resp = await client
+      final resp = await http
           .get(Uri.parse(testUrl), headers: {'Api-Key': MapConfig.neshanApiKey})
           .timeout(const Duration(seconds: 10));
       final result = resp.statusCode == 200
@@ -63,8 +48,6 @@ class _NeshanTileLayerState extends State<NeshanTileLayer> {
       final result = '✗ $e';
       _badge = result;
       if (mounted) setState(() => _localBadge = result);
-    } finally {
-      client.close();
     }
   }
 
@@ -118,10 +101,9 @@ class _DiagBadge extends StatelessWidget {
   }
 }
 
-/// Tile provider that bypasses Android's SSL verification for neshan.org
-/// (Neshan uses an Iranian CA not included in the Android root store).
+/// Tile provider — SSL bypass is handled globally via HttpOverrides in main.dart.
 class NeshanTileProvider extends TileProvider {
-  final _client = _neshanClient();
+  final _client = http.Client();
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) =>
@@ -166,9 +148,9 @@ class _NeshanTileImage extends ImageProvider<_NeshanTileImage> {
               await ui.ImmutableBuffer.fromUint8List(resp.bodyBytes);
           return decode(buffer);
         }
-        debugPrint('[Neshan] tile HTTP ${resp.statusCode} (attempt ${attempt+1}) $url');
+        debugPrint('[Neshan] tile HTTP ${resp.statusCode} (attempt ${attempt + 1}) $url');
       } catch (e) {
-        debugPrint('[Neshan] tile error (attempt ${attempt+1}): $e');
+        debugPrint('[Neshan] tile error (attempt ${attempt + 1}): $e');
       }
       if (attempt == 0) await Future.delayed(const Duration(milliseconds: 600));
     }
