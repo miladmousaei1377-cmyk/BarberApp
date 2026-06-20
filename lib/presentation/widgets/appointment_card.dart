@@ -121,8 +121,6 @@ class AppointmentCard extends StatelessWidget {
                     '${PersianUtils.formatTime(appointment.startTime)} - ${PersianUtils.formatTime(appointment.endTime)}'),
                 const SizedBox(height: 6),
                 _infoRow(Icons.cut_outlined, appointment.serviceNames.join('، ')),
-                const SizedBox(height: 6),
-                _infoRow(Icons.payments_outlined, PersianUtils.formatPrice(appointment.totalPrice)),
                 if (appointment.status == AppointmentStatus.cancelled && appointment.notes != null && appointment.notes!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Container(

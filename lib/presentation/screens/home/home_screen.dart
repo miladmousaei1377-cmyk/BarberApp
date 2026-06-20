@@ -102,13 +102,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // Priority 2: Selected cities if GPS unavailable (sorted by rating)
   // Priority 3: Empty list — show empty-state UI
   List<SalonModel> get _nearbySalons {
-    final withCoords =
-        MockData.salons.where((s) => s.lat != 0.0 && s.lng != 0.0).toList();
+    var withCoords = MockData.salons.where((s) => s.lat != 0.0 && s.lng != 0.0).toList();
+    if (_selectedCategory != 'all') {
+      withCoords = withCoords.where((s) => s.categoryValue == _selectedCategory).toList();
+    }
 
     if (_userPosition != null) {
       const dist = Distance();
-      final userLoc =
-          LatLng(_userPosition!.latitude, _userPosition!.longitude);
+      final userLoc = LatLng(_userPosition!.latitude, _userPosition!.longitude);
       return withCoords.where((s) {
         final km = dist.as(LengthUnit.Kilometer, userLoc, LatLng(s.lat, s.lng));
         return km <= 20.0;
@@ -134,8 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
   // when GPS is active and user also has cities selected.
   List<SalonModel> get _citySalons {
     if (_userPosition == null || _selectedCities.isEmpty) return [];
-    final withCoords =
-        MockData.salons.where((s) => s.lat != 0.0 && s.lng != 0.0).toList();
+    var withCoords = MockData.salons.where((s) => s.lat != 0.0 && s.lng != 0.0).toList();
+    if (_selectedCategory != 'all') {
+      withCoords = withCoords.where((s) => s.categoryValue == _selectedCategory).toList();
+    }
     return withCoords
         .where((s) => _selectedCities.contains(s.city))
         .toList()

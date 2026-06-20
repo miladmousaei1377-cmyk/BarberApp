@@ -124,8 +124,8 @@ class _MapScreenState extends State<MapScreen> {
         title: const Text('نقشه آرایشگاه‌ها',
             style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.ownerBlue,
+        foregroundColor: Colors.white,
         elevation: 0.5,
         actions: [
           Padding(
@@ -134,7 +134,7 @@ class _MapScreenState extends State<MapScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -143,7 +143,7 @@ class _MapScreenState extends State<MapScreen> {
                       fontFamily: 'Vazirmatn',
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary),
+                      color: Colors.white),
                 ),
               ),
             ),
@@ -536,8 +536,6 @@ class _MapScreenState extends State<MapScreen> {
                     _LegendDot(color: const Color(0xFF1565C0), label: 'مردانه'),
                     const SizedBox(width: 16),
                     _LegendDot(color: const Color(0xFFAD1457), label: 'زنانه'),
-                    const SizedBox(width: 16),
-                    _LegendDot(color: AppColors.primary, label: 'یونیسکس'),
                   ],
                 ),
               ],

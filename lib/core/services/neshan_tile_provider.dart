@@ -2,15 +2,18 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import '../config/map_config.dart';
 
-// Lifts blacks (+45) and boosts contrast (×1.2) so:
-//   black  → #2D2D2D (dark grey background)
-//   white  → 255     (map labels stay pure white)
-//   near-white (≥175) → clamped to 255  (ensures text is clearly white)
+// Slight contrast boost (×1.15) with minimal brightness lift (+10):
+//   black  → near-black (deep Divar-style dark background)
+//   white  → 255 (map labels stay pure white)
+// Adjust _kContrast / _kLift to tune the appearance.
+const _kContrast = 1.15;
+const _kLiftAmt = 10.0;
+
 const _kLift = ColorFilter.matrix(<double>[
-  1.2, 0,   0,   0, 45,
-  0,   1.2, 0,   0, 45,
-  0,   0,   1.2, 0, 45,
-  0,   0,   0,   1,  0,
+  _kContrast, 0,          0,          0, _kLiftAmt,
+  0,          _kContrast, 0,          0, _kLiftAmt,
+  0,          0,          _kContrast, 0, _kLiftAmt,
+  0,          0,          0,          1, 0,
 ]);
 
 /// Dark map tile layer — CartoDB Dark Matter with brightness lift to match

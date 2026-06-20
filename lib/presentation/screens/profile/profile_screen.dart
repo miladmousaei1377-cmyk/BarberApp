@@ -82,8 +82,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('پروفایل'),
+        title: const Text('پروفایل', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: Colors.white)),
         automaticallyImplyLeading: false,
+        backgroundColor: AppColors.ownerBlue,
+        foregroundColor: Colors.white,
       ),
       body: ListView(
         children: [

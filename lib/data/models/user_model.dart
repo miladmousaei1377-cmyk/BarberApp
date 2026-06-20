@@ -50,10 +50,12 @@ class UserModel {
         'stylist_status': stylistStatus,
       };
 
+  static const _unset = Object();
+
   UserModel copyWith({
     String? fullName,
     String? phone,
-    String? avatarUrl,
+    Object? avatarUrl = _unset,
     UserRole? role,
     String? email,
     String? password,
@@ -63,7 +65,7 @@ class UserModel {
         id: id,
         phone: phone ?? this.phone,
         fullName: fullName ?? this.fullName,
-        avatarUrl: avatarUrl ?? this.avatarUrl,
+        avatarUrl: avatarUrl == _unset ? this.avatarUrl : avatarUrl as String?,
         role: role ?? this.role,
         createdAt: createdAt,
         email: email ?? this.email,

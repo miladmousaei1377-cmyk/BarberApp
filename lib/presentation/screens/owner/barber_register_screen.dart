@@ -60,19 +60,29 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   }
 
   Future<void> _pickLocation() async {
-    final LatLng? result = await Get.toNamed(
-      Routes.locationPicker,
-      arguments: (_locationEnabled && _lat != 35.7448) ? LatLng(_lat, _lng) : null,
-    );
-    if (result != null) {
-      setState(() {
-        _lat = result.latitude;
-        _lng = result.longitude;
-        _locationEnabled = true;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        try { _previewMapController.move(LatLng(_lat, _lng), 15); } catch (_) {}
-      });
+    debugPrint('[LocationPicker] _pickLocation called, lat=$_lat lng=$_lng');
+    try {
+      final LatLng? result = await Get.toNamed(
+        Routes.locationPicker,
+        arguments: (_locationEnabled && _lat != 35.7448) ? LatLng(_lat, _lng) : null,
+      );
+      debugPrint('[LocationPicker] returned result=$result');
+      if (result != null) {
+        setState(() {
+          _lat = result.latitude;
+          _lng = result.longitude;
+          _locationEnabled = true;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try { _previewMapController.move(LatLng(_lat, _lng), 15); } catch (e) {
+            debugPrint('[LocationPicker] preview map move error: $e');
+          }
+        });
+      }
+    } catch (e, st) {
+      debugPrint('[LocationPicker] EXCEPTION: $e\n$st');
+      Get.snackbar('خطا', 'مشکلی در باز کردن نقشه رخ داد',
+          backgroundColor: AppColors.error, colorText: Colors.white);
     }
   }
 
@@ -147,7 +157,7 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
       address: _addressController.text.trim(),
       lat: _locationEnabled ? _lat : 0.0,
       lng: _locationEnabled ? _lng : 0.0,
-      rating: 5.0,
+      rating: 1.0,
       reviewCount: 0,
       isVerified: false,
       category: _selectedCategory,

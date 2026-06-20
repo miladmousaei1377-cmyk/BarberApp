@@ -808,6 +808,7 @@ class _SalonManagementTab extends StatefulWidget {
 
 class _SalonManagementTabState extends State<_SalonManagementTab> with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
+  bool _servicesSelecting = false;
 
   @override
   void initState() {
@@ -850,13 +851,7 @@ class _SalonManagementTabState extends State<_SalonManagementTab> with SingleTic
         backgroundColor: _kPrimary,
         foregroundColor: Colors.white,
         title: const Text('آرایشگاه', style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: Colors.white)),
-        actions: [
-          if (onServicesTab)
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              onPressed: () => _showServiceSheet(context),
-            ),
-        ],
+        actions: const [],
         bottom: TabBar(
           controller: _tabCtrl,
           indicatorColor: Colors.white,
@@ -867,7 +862,7 @@ class _SalonManagementTabState extends State<_SalonManagementTab> with SingleTic
           tabs: const [Tab(text: 'اطلاعات'), Tab(text: 'خدمات')],
         ),
       ),
-      floatingActionButton: onServicesTab
+      floatingActionButton: (onServicesTab && !_servicesSelecting)
           ? FloatingActionButton.extended(
               onPressed: () => _showServiceSheet(context),
               backgroundColor: _kPrimary,
@@ -879,7 +874,10 @@ class _SalonManagementTabState extends State<_SalonManagementTab> with SingleTic
         controller: _tabCtrl,
         children: [
           _SalonInfoSubTab(onAddServicesRequested: () => _tabCtrl.animateTo(1)),
-          _ServicesSubTab(onShowSheet: _showServiceSheet),
+          _ServicesSubTab(
+            onShowSheet: _showServiceSheet,
+            onSelectingChanged: (v) => setState(() => _servicesSelecting = v),
+          ),
         ],
       ),
     );
@@ -1150,7 +1148,8 @@ class _SalonInfoSubTab extends StatelessWidget {
 
 class _ServicesSubTab extends StatefulWidget {
   final void Function(BuildContext, {ServiceModel? editing}) onShowSheet;
-  const _ServicesSubTab({required this.onShowSheet});
+  final ValueChanged<bool>? onSelectingChanged;
+  const _ServicesSubTab({required this.onShowSheet, this.onSelectingChanged});
 
   @override
   State<_ServicesSubTab> createState() => _ServicesSubTabState();
@@ -1160,8 +1159,15 @@ class _ServicesSubTabState extends State<_ServicesSubTab> {
   bool _selecting = false;
   final Set<String> _selected = {};
 
-  void _enterSelectMode() => setState(() { _selecting = true; _selected.clear(); });
-  void _exitSelectMode() => setState(() { _selecting = false; _selected.clear(); });
+  void _enterSelectMode() {
+    setState(() { _selecting = true; _selected.clear(); });
+    widget.onSelectingChanged?.call(true);
+  }
+
+  void _exitSelectMode() {
+    setState(() { _selecting = false; _selected.clear(); });
+    widget.onSelectingChanged?.call(false);
+  }
 
   Future<void> _deleteSelected(BuildContext context) async {
     final count = _selected.length;

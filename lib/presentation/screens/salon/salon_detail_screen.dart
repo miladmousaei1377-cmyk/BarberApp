@@ -52,6 +52,74 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
     super.dispose();
   }
 
+  void _openFullscreenGallery(int initialIndex) {
+    if (_salon.images.isEmpty) return;
+    final pageCtrl = PageController(initialPage: initialIndex);
+    int currentIdx = initialIndex;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => StatefulBuilder(
+          builder: (ctx, setInner) => Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+              title: Text(
+                '${currentIdx + 1} / ${_salon.images.length}',
+                style: const TextStyle(fontFamily: 'Vazirmatn', fontSize: 14, color: Colors.white60),
+              ),
+            ),
+            body: Stack(
+              children: [
+                PageView.builder(
+                  controller: pageCtrl,
+                  itemCount: _salon.images.length,
+                  onPageChanged: (i) => setInner(() => currentIdx = i),
+                  itemBuilder: (_, i) => InteractiveViewer(
+                    minScale: 0.8,
+                    maxScale: 4.0,
+                    child: Center(
+                      child: Image.file(
+                        File(_salon.images[i]),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 80),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_salon.images.length > 1)
+                  Positioned(
+                    bottom: 24,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(_salon.images.length, (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: i == currentIdx ? 20 : 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: i == currentIdx ? AppColors.secondary : Colors.white38,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      )),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,22 +147,25 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
                 children: [
                   // Real images if available, otherwise gradient placeholder
                   if (_salon.images.isNotEmpty)
-                    PageView.builder(
-                      controller: _imagePageController,
-                      itemCount: _salon.images.length,
-                      onPageChanged: (i) => setState(() => _currentImageIndex = i),
-                      itemBuilder: (_, i) => Image.file(
-                        File(_salon.images[i]),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [AppColors.primary, AppColors.accent],
+                    GestureDetector(
+                      onTap: () => _openFullscreenGallery(_currentImageIndex),
+                      child: PageView.builder(
+                        controller: _imagePageController,
+                        itemCount: _salon.images.length,
+                        onPageChanged: (i) => setState(() => _currentImageIndex = i),
+                        itemBuilder: (_, i) => Image.file(
+                          File(_salon.images[i]),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [AppColors.primary, AppColors.accent],
+                              ),
                             ),
+                            child: const Icon(Icons.content_cut, color: Colors.white24, size: 100),
                           ),
-                          child: const Icon(Icons.content_cut, color: Colors.white24, size: 100),
                         ),
                       ),
                     )
