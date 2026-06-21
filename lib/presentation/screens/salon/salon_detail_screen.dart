@@ -192,15 +192,17 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
                       child: const Icon(Icons.content_cut, color: Colors.white24, size: 100),
                     ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          AppColors.primary.withOpacity(0.8),
-                        ],
+                  IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            AppColors.primary.withOpacity(0.8),
+                          ],
+                        ),
                       ),
                     ),
                   ),

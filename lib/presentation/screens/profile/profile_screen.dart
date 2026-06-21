@@ -181,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: 'حساب کاربری',
             items: [
               _MenuItem(Icons.person_outline, 'ویرایش پروفایل', () => _showEditProfile(context)),
-              _MenuItem(Icons.notifications_outlined, 'اعلان‌ها', () => Get.to(() => const _NotificationsPage())),
+              _MenuItem(Icons.notifications_outlined, 'اعلان‌ها', () => Get.toNamed(Routes.notifications)),
             ],
           ),
           if (_biometricAvailable) ...[

@@ -102,13 +102,6 @@ class BookingSuccessScreen extends StatelessWidget {
                         'ساعت',
                         '${PersianUtils.formatTime(appointment.startTime)} - ${PersianUtils.formatTime(appointment.endTime)}',
                       ),
-                      const SizedBox(height: 12),
-                      _ConfirmRow(
-                        Icons.payments_outlined,
-                        'مبلغ',
-                        PersianUtils.formatPrice(appointment.totalPrice),
-                        valueColor: AppColors.secondary,
-                      ),
                     ],
                   ),
                 ),
