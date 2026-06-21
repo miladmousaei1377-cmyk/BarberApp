@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../app/routes/app_pages.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/services/neshan_tile_provider.dart';
@@ -170,15 +171,26 @@ class _SalonDetailScreenState extends State<SalonDetailScreen>
                       ),
                     )
                   else
-                    Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [AppColors.primary, AppColors.accent],
-                      ),
+                    GestureDetector(
+                    onTap: () => Get.snackbar(
+                      'گالری',
+                      'تصویری برای این آرایشگاه ثبت نشده',
+                      backgroundColor: AppColors.primary,
+                      colorText: Colors.white,
+                      margin: const EdgeInsets.all(16),
+                      borderRadius: 12,
+                      duration: const Duration(seconds: 2),
                     ),
-                    child: const Icon(Icons.content_cut, color: Colors.white24, size: 100),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [AppColors.primary, AppColors.accent],
+                        ),
+                      ),
+                      child: const Icon(Icons.content_cut, color: Colors.white24, size: 100),
+                    ),
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -767,6 +779,7 @@ class _InfoTab extends StatelessWidget {
             title: 'شماره تلفن',
             icon: Icons.phone_outlined,
             content: salon.phone!,
+            onTap: () => launchUrl(Uri.parse('tel:${salon.phone}')),
           ),
         ],
         const SizedBox(height: 12),
@@ -842,12 +855,13 @@ class _InfoCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final String content;
+  final VoidCallback? onTap;
 
-  const _InfoCard({required this.title, required this.icon, required this.content});
+  const _InfoCard({required this.title, required this.icon, required this.content, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -895,8 +909,18 @@ class _InfoCard extends StatelessWidget {
               ],
             ),
           ),
+          if (onTap != null)
+            const Icon(Icons.call_outlined, color: AppColors.secondary, size: 20),
         ],
       ),
     );
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: card,
+      );
+    }
+    return card;
   }
 }

@@ -193,7 +193,12 @@ class _DashboardTabState extends State<_DashboardTab> {
               pinned: true,
               automaticallyImplyLeading: false,
               backgroundColor: _kPrimary,
-              actions: const [],
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                  onPressed: () => Get.toNamed(Routes.notifications),
+                ),
+              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: const BoxDecoration(

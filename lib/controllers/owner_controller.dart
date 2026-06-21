@@ -70,7 +70,7 @@ class OwnerController extends GetxController {
         name: user.fullName,
         avatar: user.avatarUrl,
         specialty: 'آرایشگر',
-        rating: 5.0,
+        rating: s.rating,
       ));
     }
     DataService.saveAll();

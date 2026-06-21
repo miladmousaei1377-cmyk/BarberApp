@@ -23,6 +23,7 @@ import '../../presentation/screens/map/location_picker_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/owner/barber_panel_screen.dart';
 import '../../presentation/screens/owner/barber_register_screen.dart';
+import '../../presentation/screens/notifications/notifications_screen.dart';
 
 part 'app_routes.dart';
 
@@ -53,5 +54,6 @@ class AppPages {
     GetPage(name: Routes.profile, page: () => const ProfileScreen()),
     GetPage(name: Routes.ownerPanel, page: () => const BarberPanelScreen()),
     GetPage(name: Routes.barberRegister, page: () => const BarberRegisterScreen()),
+    GetPage(name: Routes.notifications, page: () => const NotificationsScreen()),
   ];
 }
