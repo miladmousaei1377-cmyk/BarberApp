@@ -496,49 +496,51 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => _loadUserLocation().then((_) {
-                  if (mounted) setState(() {});
-                }),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.secondary,
-                  side: const BorderSide(color: AppColors.secondary),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+          if (_userPosition == null && _selectedCities.isEmpty) ...[
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _loadUserLocation().then((_) {
+                    if (mounted) setState(() {});
+                  }),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.secondary,
+                    side: const BorderSide(color: AppColors.secondary),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                  ),
+                  icon: const Icon(Icons.my_location, size: 16),
+                  label: const Text('فعال‌سازی موقعیت',
+                      style: TextStyle(
+                          fontFamily: 'Vazirmatn',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600)),
                 ),
-                icon: const Icon(Icons.my_location, size: 16),
-                label: const Text('فعال‌سازی موقعیت',
-                    style: TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
-              ),
-              const SizedBox(width: 10),
-              ElevatedButton.icon(
-                onPressed: () => _openCitySelector(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                const SizedBox(width: 10),
+                ElevatedButton.icon(
+                  onPressed: () => _openCitySelector(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                  ),
+                  icon: const Icon(Icons.location_city, size: 16),
+                  label: const Text('انتخاب شهر',
+                      style: TextStyle(
+                          fontFamily: 'Vazirmatn',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600)),
                 ),
-                icon: const Icon(Icons.location_city, size: 16),
-                label: const Text('انتخاب شهر',
-                    style: TextStyle(
-                        fontFamily: 'Vazirmatn',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );

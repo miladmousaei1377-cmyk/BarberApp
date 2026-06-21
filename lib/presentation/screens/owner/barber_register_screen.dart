@@ -62,12 +62,12 @@ class _BarberRegisterScreenState extends State<BarberRegisterScreen> {
   Future<void> _pickLocation() async {
     debugPrint('[LocationPicker] _pickLocation called, lat=$_lat lng=$_lng');
     try {
-      final LatLng? result = await Get.toNamed(
+      final dynamic result = await Get.toNamed(
         Routes.locationPicker,
         arguments: (_locationEnabled && _lat != 35.7448) ? LatLng(_lat, _lng) : null,
       );
       debugPrint('[LocationPicker] returned result=$result');
-      if (result != null) {
+      if (result is LatLng) {
         setState(() {
           _lat = result.latitude;
           _lng = result.longitude;

@@ -122,7 +122,7 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('نقشه آرایشگاه‌ها',
-            style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700)),
+            style: TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700, color: Colors.white)),
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.ownerBlue,
         foregroundColor: Colors.white,
